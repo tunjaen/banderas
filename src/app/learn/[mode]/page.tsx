@@ -31,6 +31,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<any>(null);
+  const [funFact, setFunFact] = useState<string | null>(null);
 
   // Session tracking
   const [questionCount, setQuestionCount] = useState(0);
@@ -50,6 +51,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
 
     setLoading(true);
     setFeedback(null);
+    setFunFact(null);
     setSelectedId(null);
     try {
       const url = new URL("/api/game/next", window.location.origin);
@@ -94,6 +96,23 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       setQuestionCount(prev => prev + 1);
       if (isCorrect) setCorrectCount(prev => prev + 1);
       setSessionXp(prev => prev + (data.xpGained || 0));
+
+      // Fetch fun fact from Wikipedia
+      try {
+        const term = lang === 'en' ? question.countryNameEn : question.countryName;
+        const wikiLang = lang === 'en' ? 'en' : 'es';
+        const wikiRes = await fetch(`https://${wikiLang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`);
+        if (wikiRes.ok) {
+          const wikiData = await wikiRes.json();
+          if (wikiData.extract) {
+            // Get first 1-2 sentences for brevity
+            const sentences = wikiData.extract.split(/(?<=[.!?])\s+/);
+            setFunFact(sentences.slice(0, 2).join(' '));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching fun fact:", err);
+      }
       
     } catch (e) {
       console.error(e);
@@ -269,6 +288,17 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                       {lang === 'en' 
                         ? "Extra Challenge: This is an overseas territory or autonomous dependency."
                         : "Reto Extra: Este es un territorio de ultramar o dependencia autónoma."}
+                    </p>
+                  </div>
+                )}
+                
+                {funFact && (
+                  <div className="animate-fade-in" style={{ marginTop: "1rem", padding: "0.75rem", background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <p style={{ fontSize: "0.75rem", fontWeight: "bold", color: "var(--color-primary)", marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {lang === 'en' ? "💡 Did you know?" : "💡 ¿Sabías que...?"}
+                    </p>
+                    <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", lineHeight: "1.4", margin: 0 }}>
+                      {funFact}
                     </p>
                   </div>
                 )}
