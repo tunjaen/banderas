@@ -75,6 +75,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       }
     }
 
+    const ISLAND_COUNTRIES = ["ABW","ASM","ATG","AUS","BHS","SHN","BMU","BRB","CCK","COK","COM","CPV","CUB","CUW","CXR","CYM","CYP","DMA","DOM","FJI","FLK","FSM","GBR","GGY","GLP","GRL","GUM","HTI","IDN","IMN","IOT","IRL","ISL","JAM","JEY","JPN","KIR","KNA","LCA","LKA","MDG","MDV","MHL","MLT","MNP","MSR","MTQ","MUS","MYT","NCL","NIU","NRU","NZL","PCN","PHL","PNG","PRI","PYF","REU","SGP","SJM","SLB","SPM","STP","SXM","SYC","TKL","TLS","TON","TTO","TUV","TWN","VGB","VIR","VUT","WLF","WSM"];
+    const islandsMasteredCount = user.progress.filter(p => p.status === "Dominado" && ISLAND_COUNTRIES.includes(p.country.isoCode.toUpperCase())).length;
+
     const masteredCount = user.progress.filter(p => p.status === "Dominado").length;
 
     return NextResponse.json({
@@ -86,7 +89,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         xp: user.xp,
         currentStreak: user.currentStreak,
         longestStreak: user.longestStreak,
-        masteredCount
+        masteredCount,
+        islandsMasteredCount
       },
       stats: {
         bestMode,

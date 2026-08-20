@@ -100,16 +100,26 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
     }
   };
 
-  if (mode === "continents" && !continent) {
-    const continents = ["África", "Asia", "Europa", "América del Norte", "América del Sur", "Oceanía"];
+  if ((mode === "continents" || mode === "spatial") && !continent) {
+    const categories = ["Mundo", "África", "Asia", "Europa", "América del Norte", "América del Sur", "Oceanía", "Islas"];
     return (
       <div className="container" style={{ padding: "2rem" }}>
         <button onClick={() => router.push("/dashboard")} className="btn btn-outline" style={{ marginBottom: "2rem" }}>Volver</button>
-        <h1 className="text-center" style={{ marginBottom: "2rem" }}>Elige un Continente</h1>
+        <h1 className="text-center" style={{ marginBottom: "2rem" }}>Elige una Región o Categoría</h1>
         <div className="flex justify-center flex-wrap gap-4">
-          {continents.map(c => (
-            <button key={c} onClick={() => router.push(`/learn/continents?continent=${encodeURIComponent(c)}`)} className="card hover-scale" style={{ width: "200px", textAlign: "center", fontSize: "1.25rem", fontWeight: "600", color: "var(--color-text)", cursor: "pointer", border: "1px solid rgba(255,255,255,0.1)" }}>
-              {c}
+          {categories.map(c => (
+            <button 
+              key={c} 
+              onClick={() => router.push(`/learn/${mode}?continent=${encodeURIComponent(c)}`)} 
+              className="card hover-scale" 
+              style={{ 
+                width: "200px", textAlign: "center", fontSize: "1.25rem", fontWeight: "600", 
+                color: "var(--color-text)", cursor: "pointer", border: "1px solid rgba(255,255,255,0.1)",
+                background: c === "Islas" ? "rgba(14, 165, 233, 0.1)" : c === "Mundo" ? "rgba(16, 185, 129, 0.1)" : "var(--color-surface)",
+                borderColor: c === "Islas" ? "rgba(14, 165, 233, 0.5)" : c === "Mundo" ? "rgba(16, 185, 129, 0.5)" : "rgba(255,255,255,0.1)"
+              }}
+            >
+              {c === "Islas" ? "🏝️ Islas" : c === "Mundo" ? "🌍 Mundo" : c}
             </button>
           ))}
         </div>

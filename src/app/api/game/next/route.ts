@@ -27,9 +27,15 @@ export async function GET(req: Request) {
 
     let pool = fullPool;
     
-    // Filter pool by mode
-    if (mode === "continents" && continent) {
-      pool = pool.filter(c => c.continent === continent);
+    const ISLAND_COUNTRIES = ["ABW","ASM","ATG","AUS","BHS","SHN","BMU","BRB","CCK","COK","COM","CPV","CUB","CUW","CXR","CYM","CYP","DMA","DOM","FJI","FLK","FSM","GBR","GGY","GLP","GRL","GUM","HTI","IDN","IMN","IOT","IRL","ISL","JAM","JEY","JPN","KIR","KNA","LCA","LKA","MDG","MDV","MHL","MLT","MNP","MSR","MTQ","MUS","MYT","NCL","NIU","NRU","NZL","PCN","PHL","PNG","PRI","PYF","REU","SGP","SJM","SLB","SPM","STP","SXM","SYC","TKL","TLS","TON","TTO","TUV","TWN","VGB","VIR","VUT","WLF","WSM"];
+
+    // Filter pool by mode or continent
+    if ((mode === "continents" || mode === "spatial") && continent && continent !== "Mundo") {
+      if (continent === "Islas") {
+        pool = pool.filter(c => ISLAND_COUNTRIES.includes(c.id));
+      } else {
+        pool = pool.filter(c => c.continent === continent);
+      }
     } else if (mode === "weaknesses") {
       const weakIds = userProgress
         .filter(p => p.status === "Aprendiendo" || (p.correctAnswers / (p.correctAnswers + p.wrongAnswers) < 0.6))

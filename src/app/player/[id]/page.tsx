@@ -99,6 +99,16 @@ export default function PlayerProfilePage() {
               </span>
             </div>
           </div>
+
+          <div>
+            <p className="text-muted" style={{ marginBottom: "0.5rem", fontSize: "0.875rem" }}>{lang === 'en' ? "Islands Mastered" : "Islas Dominadas"}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", background: "rgba(14, 165, 233, 0.05)", padding: "1rem", borderRadius: "var(--radius-md)", border: "1px solid rgba(14, 165, 233, 0.1)" }}>
+              <span style={{ fontSize: "1.5rem" }}>🏝️</span>
+              <span style={{ fontWeight: "700", fontSize: "1.5rem", color: "var(--color-primary)" }}>
+                {user.islandsMasteredCount}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Worst Flags */}
