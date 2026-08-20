@@ -83,6 +83,7 @@ export async function GET(req: Request) {
     const shuffledOptions = options.sort(() => Math.random() - 0.5).map(o => ({
       id: o.id,
       name: o.name,
+      nameEn: o.nameEn,
       isoCode: o.isoCode, // for flag rendering
     }));
 

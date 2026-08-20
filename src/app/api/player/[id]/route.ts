@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = params.id;
+    const userId = (await params).id;
     if (!userId) return NextResponse.json({ message: "Missing ID" }, { status: 400 });
 
     const user = await prisma.user.findUnique({
