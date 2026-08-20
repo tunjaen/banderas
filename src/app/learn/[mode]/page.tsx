@@ -262,10 +262,12 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
         <div className="animate-fade-in" style={{
           position: "fixed", bottom: 0, left: 0, right: 0, 
           padding: "2rem",
-          background: feedback.isCorrect ? "var(--color-surface)" : "var(--color-surface)",
+          background: "var(--color-bg)",
           borderTop: `4px solid ${feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)"}`,
           boxShadow: "0 -10px 40px rgba(0,0,0,0.5)",
-          zIndex: 50
+          zIndex: 50,
+          maxHeight: "100vh",
+          overflowY: "auto"
         }}>
           <div className="container flex md-flex-col md-items-center md-text-center justify-between items-start gap-6" style={{ maxWidth: "1000px" }}>
             <div className="flex md-flex-col md-items-center gap-4" style={{ flex: 1 }}>
