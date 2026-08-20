@@ -146,8 +146,8 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
         <button onClick={() => router.push("/dashboard")} style={{ fontSize: "1.5rem", color: "var(--color-text-muted)" }}>
           <FaTimes />
         </button>
-        <div style={{ flex: 1, margin: "0 2rem", height: "12px", background: "rgba(255,255,255,0.1)", borderRadius: "var(--radius-full)" }}>
-          <div style={{ width: "50%", height: "100%", background: "var(--color-primary)", borderRadius: "var(--radius-full)" }}></div>
+        <div style={{ flex: 1, margin: "0 2rem", height: "12px", background: "rgba(255,255,255,0.1)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
+          <div style={{ width: `${(questionCount / 10) * 100}%`, height: "100%", background: "var(--color-primary)", borderRadius: "var(--radius-full)", transition: "width 0.3s ease-in-out" }}></div>
         </div>
         <div className="flex gap-2 items-center font-bold text-warning">
           {/* Mock streak or session score */}
