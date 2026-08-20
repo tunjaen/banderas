@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     // SuperMemo-2 (SM-2) simplified algorithm
-    let { easeFactor, interval, correctAnswers, wrongAnswers } = progress;
+    let { easeFactor, interval, correctAnswers, wrongAnswers, consecutiveCorrect } = progress;
     
     // Quality of response: 5 (perfect), 0 (complete blackout)
     // For simplicity: correct = 4, wrong = 0
@@ -43,6 +43,7 @@ export async function POST(req: Request) {
 
     if (isCorrect) {
       correctAnswers += 1;
+      consecutiveCorrect += 1;
       if (interval === 0) {
         interval = 1;
       } else if (interval === 1) {
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
       }
     } else {
       wrongAnswers += 1;
+      consecutiveCorrect = 0; // Reset streak
       interval = 1; // Reset interval
     }
 
@@ -62,8 +64,8 @@ export async function POST(req: Request) {
     // Determine status
     let status = "Aprendiendo";
     if (correctAnswers === 0) status = "Nuevo";
-    else if (correctAnswers >= 3 && wrongAnswers === 0) status = "Familiar";
-    else if (correctAnswers > 5 && (correctAnswers / (correctAnswers + wrongAnswers)) > 0.8) status = "Dominado";
+    else if (correctAnswers >= 4 && (correctAnswers / (correctAnswers + wrongAnswers)) > 0.8) status = "Dominado";
+    else if (consecutiveCorrect >= 3) status = "Familiar";
 
     const nextReview = new Date();
     nextReview.setDate(nextReview.getDate() + interval);
@@ -78,6 +80,7 @@ export async function POST(req: Request) {
         interval,
         correctAnswers,
         wrongAnswers,
+        consecutiveCorrect,
         status,
         lastReviewed: new Date(),
         nextReview

@@ -58,6 +58,8 @@ model UserProgress {
   status         String   @default("Nuevo") // Nuevo, Aprendiendo, Familiar, Dominado
   correctAnswers Int      @default(0)
   wrongAnswers   Int      @default(0)
+  consecutiveCorrect Int  @default(0)
+
   
   // Spaced repetition fields (SM-2 based)
   easeFactor     Float    @default(2.5) // Minimum 1.3
