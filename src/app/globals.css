@@ -191,3 +191,13 @@ button {
 .animate-pulse {
   animation: pulse-soft 2s infinite;
 }
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .md-flex-col { flex-direction: column !important; }
+  .md-items-center { align-items: center !important; }
+  .md-text-center { text-align: center !important; }
+  .md-w-full { width: 100% !important; }
+  .md-h-auto { height: auto !important; }
+  .md-mt-4 { margin-top: 1rem !important; }
+}

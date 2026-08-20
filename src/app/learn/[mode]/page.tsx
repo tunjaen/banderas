@@ -267,8 +267,8 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           boxShadow: "0 -10px 40px rgba(0,0,0,0.5)",
           zIndex: 50
         }}>
-          <div className="container flex justify-between items-start gap-6" style={{ maxWidth: "1000px" }}>
-            <div className="flex gap-4" style={{ flex: 1 }}>
+          <div className="container flex md-flex-col md-items-center md-text-center justify-between items-start gap-6" style={{ maxWidth: "1000px" }}>
+            <div className="flex md-flex-col md-items-center gap-4" style={{ flex: 1 }}>
               <div style={{ color: feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)", fontSize: "2.5rem", flexShrink: 0 }}>
                 {feedback.isCorrect ? <FaCheckCircle /> : <FaTimesCircle />}
               </div>
@@ -316,8 +316,8 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
               </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "150px" }}>
-              <button onClick={fetchQuestion} className="btn" style={{ 
+            <div className="md-w-full md-h-auto" style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "150px" }}>
+              <button onClick={fetchQuestion} className="btn md-w-full" style={{ 
                 background: feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)",
                 color: "white", fontSize: "1.25rem", padding: "1rem 2.5rem", borderRadius: "var(--radius-full)",
                 boxShadow: "0 4px 14px rgba(0,0,0,0.25)"
