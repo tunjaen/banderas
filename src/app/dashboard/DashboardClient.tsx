@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FaFire, FaStar, FaGlobe, FaTrophy, FaMapMarkerAlt, FaChartBar, FaMedal, FaCheckCircle, FaBookOpen, FaQuestionCircle, FaBolt } from "react-icons/fa";
+import { FaFire, FaStar, FaGlobe, FaTrophy, FaMapMarkerAlt, FaChartBar, FaMedal, FaBolt, FaCheckCircle, FaBookOpen, FaQuestionCircle } from "react-icons/fa";
 import LogoutButton from "./LogoutButton";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -39,13 +39,19 @@ export default function DashboardClient({
   const totalExplored = masteredCount + familiarCount + learningCount;
   const coveragePercent = Math.round((totalExplored / totalCountries) * 100);
 
+  // Segmented bar percentages for status breakdown
+  const domPct = (masteredCount / totalCountries) * 100;
+  const famPct = (familiarCount / totalCountries) * 100;
+  const lrnPct = (learningCount / totalCountries) * 100;
+  const unsPct = Math.max(0, 100 - (domPct + famPct + lrnPct));
+
   return (
     <div className="container animate-fade-in" style={{ padding: "2rem", maxWidth: "1200px" }}>
-      <header className="flex justify-between items-center" style={{ marginBottom: "2.5rem" }}>
+      <header className="flex justify-between items-center" style={{ marginBottom: "2rem" }}>
         <div>
-          <h1 style={{ fontSize: "2rem", fontWeight: "800" }}>{t.dashboard.title}, {user.name?.split(" ")[0] || "User"} 👋</h1>
-          <p className="text-muted" style={{ fontSize: "1.125rem", marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ background: "rgba(167, 244, 50, 0.15)", color: "var(--color-primary)", padding: "0.2rem 0.6rem", borderRadius: "8px", fontWeight: "700", fontSize: "0.875rem" }}>
+          <h1 style={{ fontSize: "1.75rem", fontWeight: "800" }}>{t.dashboard.title}, {user.name?.split(" ")[0] || "User"} 👋</h1>
+          <p className="text-muted" style={{ fontSize: "1rem", marginTop: "0.2rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ background: "rgba(167, 244, 50, 0.15)", color: "var(--color-primary)", padding: "0.15rem 0.5rem", borderRadius: "6px", fontWeight: "700", fontSize: "0.85rem" }}>
               {t.dashboard.level} {user.level}
             </span>
             <span>• {user.xp} XP total</span>
@@ -53,27 +59,25 @@ export default function DashboardClient({
         </div>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
           <LanguageSelector />
-          <div className="flex gap-2 items-center" style={{ background: "var(--color-surface)", padding: "0.5rem 1rem", borderRadius: "var(--radius-full)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <FaFire className="text-danger" />
-            <span style={{ fontWeight: "600" }}>{user.currentStreak} {t.profile?.days || "días"}</span>
+          <div className="flex gap-2 items-center" style={{ background: "var(--color-surface)", padding: "0.4rem 0.8rem", borderRadius: "var(--radius-full)", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <FaFire className="text-danger" size={14} />
+            <span style={{ fontWeight: "600", fontSize: "0.875rem" }}>{user.currentStreak} {t.profile?.days || "días"}</span>
           </div>
           <LogoutButton text={t.dashboard.logout} />
         </div>
       </header>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "1.5rem", marginBottom: "2rem", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "0.5rem" }}>
+      <div style={{ display: "flex", gap: "1.5rem", marginBottom: "1.5rem", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "0.25rem" }}>
         <button 
           onClick={() => setActiveTab("progress")}
           style={{ 
-            fontSize: "1.125rem", fontWeight: "600", display: "flex", alignItems: "center", gap: "0.5rem",
+            fontSize: "1rem", fontWeight: "600", display: "flex", alignItems: "center", gap: "0.5rem",
             color: activeTab === "progress" ? "var(--color-primary)" : "var(--color-text-muted)",
             borderBottom: activeTab === "progress" ? "3px solid var(--color-primary)" : "3px solid transparent",
-            paddingBottom: "0.5rem",
-            marginBottom: "-0.5rem",
-            background: "none",
-            borderLeft: "none", borderRight: "none", borderTop: "none",
-            cursor: "pointer"
+            paddingBottom: "0.4rem",
+            marginBottom: "-0.4rem",
+            background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", cursor: "pointer"
           }}
         >
           <FaChartBar /> {t.dashboard.tabs?.progress || "Mi Progreso"}
@@ -81,14 +85,12 @@ export default function DashboardClient({
         <button 
           onClick={() => setActiveTab("ranking")}
           style={{ 
-            fontSize: "1.125rem", fontWeight: "600", display: "flex", alignItems: "center", gap: "0.5rem",
+            fontSize: "1rem", fontWeight: "600", display: "flex", alignItems: "center", gap: "0.5rem",
             color: activeTab === "ranking" ? "var(--color-primary)" : "var(--color-text-muted)",
             borderBottom: activeTab === "ranking" ? "3px solid var(--color-primary)" : "3px solid transparent",
-            paddingBottom: "0.5rem",
-            marginBottom: "-0.5rem",
-            background: "none",
-            borderLeft: "none", borderRight: "none", borderTop: "none",
-            cursor: "pointer"
+            paddingBottom: "0.4rem",
+            marginBottom: "-0.4rem",
+            background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", cursor: "pointer"
           }}
         >
           <FaMedal /> {t.dashboard.tabs?.ranking || "Ranking Global"}
@@ -97,21 +99,21 @@ export default function DashboardClient({
 
       {activeTab === "progress" ? (
         <>
-          {/* Main Progress Container */}
-          <div className="card" style={{ marginBottom: "2.5rem", padding: "2rem", background: "var(--color-surface)" }}>
+          {/* Ultra-Compact Main Progress Card */}
+          <div className="card" style={{ marginBottom: "2rem", padding: "1.25rem 1.5rem", background: "var(--color-surface)" }}>
             
-            {/* Level XP Progress Bar */}
-            <div style={{ marginBottom: "2rem", paddingBottom: "1.5rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="flex justify-between items-center mb-2">
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <FaBolt className="text-warning" />
-                  <span style={{ fontWeight: "700", fontSize: "1.1rem" }}>{t.dashboard.levelProgress || "Progreso del Nivel"} {user.level}</span>
+            {/* 1. Level XP Progress Row */}
+            <div style={{ marginBottom: "1.25rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex justify-between items-center mb-1">
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: "700", fontSize: "0.95rem" }}>
+                  <FaBolt className="text-warning" size={14} />
+                  <span>{t.dashboard.levelProgress || "Nivel"} {user.level}</span>
                 </div>
-                <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", fontWeight: "600" }}>
+                <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", fontWeight: "600" }}>
                   {xpInLevel} / {xpNeededInLevel} XP ({levelProgressPercent}%)
                 </span>
               </div>
-              <div style={{ width: "100%", height: "14px", background: "rgba(255,255,255,0.08)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
+              <div style={{ width: "100%", height: "6px", background: "rgba(255,255,255,0.08)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
                 <div 
                   style={{ 
                     height: "100%", 
@@ -122,132 +124,120 @@ export default function DashboardClient({
                   }} 
                 />
               </div>
-              <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.5rem" }}>
-                {xpNeededInLevel - xpInLevel} XP restantes para alcanzar el Nivel {user.level + 1}
-              </p>
             </div>
 
-            {/* Global Mastery & Coverage Dual Bars */}
-            <div style={{ marginBottom: "2rem" }}>
-              <h2 style={{ fontSize: "1.25rem", marginBottom: "1.25rem", fontWeight: "700" }}>{t.dashboard.globalProgress}</h2>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
-                {/* Knowledge Coverage Bar */}
-                <div style={{ background: "rgba(255,255,255,0.03)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span style={{ fontWeight: "600", fontSize: "0.95rem" }}>{t.dashboard.knowledgeCoverage || "Cobertura de Conocimiento"}</span>
-                    <span style={{ fontWeight: "800", color: "#3B82F6" }}>{coveragePercent}%</span>
+            {/* 2. Global Progress & Coverage Row (Side by Side in 1 line) */}
+            <div style={{ marginBottom: "1.25rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                
+                {/* Knowledge Coverage */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--color-text)" }}>
+                      {t.dashboard.knowledgeCoverage || "Cobertura de Conocimiento"}
+                    </span>
+                    <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#3B82F6" }}>
+                      {coveragePercent}% <span style={{ fontSize: "0.75rem", fontWeight: "normal", color: "var(--color-text-muted)" }}>({totalExplored}/{totalCountries})</span>
+                    </span>
                   </div>
-                  <div style={{ width: "100%", height: "10px", background: "rgba(255,255,255,0.08)", borderRadius: "var(--radius-full)", overflow: "hidden", marginBottom: "0.5rem" }}>
+                  <div style={{ width: "100%", height: "6px", background: "rgba(255,255,255,0.08)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${coveragePercent}%`, background: "#3B82F6", borderRadius: "var(--radius-full)", transition: "width 0.8s ease-in-out" }} />
                   </div>
-                  <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
-                    {totalExplored} de {totalCountries} países practicados al menos una vez
-                  </p>
                 </div>
 
-                {/* Total Mastery Bar */}
-                <div style={{ background: "rgba(255,255,255,0.03)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span style={{ fontWeight: "600", fontSize: "0.95rem" }}>{t.dashboard.mastered || "Dominio Total"}</span>
-                    <span style={{ fontWeight: "800", color: "var(--color-primary)" }}>{masteredPercent}%</span>
+                {/* Total Mastery */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--color-text)" }}>
+                      {t.dashboard.mastered || "Dominio Total"}
+                    </span>
+                    <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--color-primary)" }}>
+                      {masteredPercent}% <span style={{ fontSize: "0.75rem", fontWeight: "normal", color: "var(--color-text-muted)" }}>({masteredCount}/{totalCountries})</span>
+                    </span>
                   </div>
-                  <div style={{ width: "100%", height: "10px", background: "rgba(255,255,255,0.08)", borderRadius: "var(--radius-full)", overflow: "hidden", marginBottom: "0.5rem" }}>
+                  <div style={{ width: "100%", height: "6px", background: "rgba(255,255,255,0.08)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${masteredPercent}%`, background: "var(--color-primary)", borderRadius: "var(--radius-full)", transition: "width 0.8s ease-in-out" }} />
                   </div>
-                  <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
-                    {masteredCount} de {totalCountries} banderas memorizadas a largo plazo
-                  </p>
                 </div>
+
               </div>
             </div>
 
-            {/* Detailed 4-Status Cards */}
+            {/* 3. Memory Status Breakdown (Single segmented bar + 1-line status chips) */}
             <div>
-              <h3 style={{ fontSize: "1rem", color: "var(--color-text-muted)", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
-                Desglose por Estado de Memoria
-              </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
+              <div className="flex justify-between items-center mb-2">
+                <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "700" }}>
+                  Desglose por Estado de Memoria
+                </span>
+              </div>
+
+              {/* Segmented Bar */}
+              <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "var(--radius-full)", overflow: "hidden", display: "flex", marginBottom: "0.75rem" }}>
+                {domPct > 0 && <div style={{ width: `${domPct}%`, background: "#10B981" }} title={`Dominados: ${masteredCount}`} />}
+                {famPct > 0 && <div style={{ width: `${famPct}%`, background: "#F59E0B" }} title={`Familiar: ${familiarCount}`} />}
+                {lrnPct > 0 && <div style={{ width: `${lrnPct}%`, background: "#3B82F6" }} title={`Aprendiendo: ${learningCount}`} />}
+                {unsPct > 0 && <div style={{ width: `${unsPct}%`, background: "rgba(255,255,255,0.15)" }} title={`Por Descubrir: ${unseenCount}`} />}
+              </div>
+
+              {/* Inline 4 Status Chips (Single Row) */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
                 
-                {/* Dominados */}
-                <div style={{ background: "rgba(167, 244, 50, 0.06)", border: "1px solid rgba(167, 244, 50, 0.2)", padding: "1rem", borderRadius: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--color-primary)", marginBottom: "0.5rem" }}>
-                    <FaCheckCircle size={16} />
-                    <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>{t.dashboard.mastered || "Dominados"}</span>
-                  </div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: "800" }}>{masteredCount}</div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
-                    {masteredPercent}% del total
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", background: "rgba(16, 185, 129, 0.08)", padding: "0.3rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                  <FaCheckCircle className="text-success" size={12} />
+                  <span style={{ fontWeight: "600", color: "#10B981" }}>{t.dashboard.mastered || "Dominados"}:</span>
+                  <span style={{ fontWeight: "800" }}>{masteredCount}</span>
                 </div>
 
-                {/* Familiar */}
-                <div style={{ background: "rgba(245, 158, 11, 0.06)", border: "1px solid rgba(245, 158, 11, 0.2)", padding: "1rem", borderRadius: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#F59E0B", marginBottom: "0.5rem" }}>
-                    <FaStar size={16} />
-                    <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>{t.dashboard.familiar || "Familiar"}</span>
-                  </div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: "800" }}>{familiarCount}</div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
-                    Aciertos constantes
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", background: "rgba(245, 158, 11, 0.08)", padding: "0.3rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(245, 158, 11, 0.2)" }}>
+                  <FaStar className="text-warning" size={12} />
+                  <span style={{ fontWeight: "600", color: "#F59E0B" }}>{t.dashboard.familiar || "Familiar"}:</span>
+                  <span style={{ fontWeight: "800" }}>{familiarCount}</span>
                 </div>
 
-                {/* Aprendiendo */}
-                <div style={{ background: "rgba(59, 130, 246, 0.06)", border: "1px solid rgba(59, 130, 246, 0.2)", padding: "1rem", borderRadius: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#3B82F6", marginBottom: "0.5rem" }}>
-                    <FaBookOpen size={16} />
-                    <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>{t.dashboard.learning || "Aprendiendo"}</span>
-                  </div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: "800" }}>{learningCount}</div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
-                    En estudio activo
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", background: "rgba(59, 130, 246, 0.08)", padding: "0.3rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                  <FaBookOpen style={{ color: "#3B82F6" }} size={12} />
+                  <span style={{ fontWeight: "600", color: "#3B82F6" }}>{t.dashboard.learning || "Aprendiendo"}:</span>
+                  <span style={{ fontWeight: "800" }}>{learningCount}</span>
                 </div>
 
-                {/* Por Descubrir */}
-                <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "1rem", borderRadius: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }}>
-                    <FaQuestionCircle size={16} />
-                    <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>{t.dashboard.unseen || "Por Descubrir"}</span>
-                  </div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: "800", color: "var(--color-text-muted)" }}>{unseenCount}</div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
-                    Sin repeticiones
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", background: "rgba(255, 255, 255, 0.03)", padding: "0.3rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  <FaQuestionCircle style={{ color: "var(--color-text-muted)" }} size={12} />
+                  <span style={{ fontWeight: "600", color: "var(--color-text-muted)" }}>{t.dashboard.unseen || "Por Descubrir"}:</span>
+                  <span style={{ fontWeight: "800", color: "var(--color-text-muted)" }}>{unseenCount}</span>
                 </div>
 
               </div>
+
             </div>
 
           </div>
 
-          <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem", fontWeight: "800" }}>{t.dashboard.startSession}</h2>
+          <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem", fontWeight: "800" }}>{t.dashboard.startSession}</h2>
           <div className="flex gap-4" style={{ flexWrap: "wrap" }}>
-            <Link href="/learn/world" className="card" style={{ flex: "1", minWidth: "200px", textDecoration: "none", display: "block" }}>
-              <FaGlobe size={32} className="text-primary" style={{ marginBottom: "1rem" }} />
-              <h3>{t.dashboard.modes.world.title}</h3>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>{t.dashboard.modes.world.desc}</p>
+            <Link href="/learn/world" className="card" style={{ flex: "1", minWidth: "180px", textDecoration: "none", display: "block", padding: "1.25rem" }}>
+              <FaGlobe size={28} className="text-primary" style={{ marginBottom: "0.75rem" }} />
+              <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.world.title}</h3>
+              <p className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>{t.dashboard.modes.world.desc}</p>
             </Link>
-            <Link href="/learn/continents" className="card" style={{ flex: "1", minWidth: "200px", textDecoration: "none", display: "block" }}>
-              <FaStar size={32} className="text-warning" style={{ marginBottom: "1rem" }} />
-              <h3>{t.dashboard.modes.continents.title}</h3>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>{t.dashboard.modes.continents.desc}</p>
+            <Link href="/learn/continents" className="card" style={{ flex: "1", minWidth: "180px", textDecoration: "none", display: "block", padding: "1.25rem" }}>
+              <FaStar size={28} className="text-warning" style={{ marginBottom: "0.75rem" }} />
+              <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.continents.title}</h3>
+              <p className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>{t.dashboard.modes.continents.desc}</p>
             </Link>
-            <Link href="/learn/weaknesses" className="card" style={{ flex: "1", minWidth: "200px", textDecoration: "none", display: "block" }}>
-              <FaTrophy size={32} className="text-danger" style={{ marginBottom: "1rem" }} />
-              <h3>{t.dashboard.modes.weaknesses.title}</h3>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>{t.dashboard.modes.weaknesses.desc}</p>
+            <Link href="/learn/weaknesses" className="card" style={{ flex: "1", minWidth: "180px", textDecoration: "none", display: "block", padding: "1.25rem" }}>
+              <FaTrophy size={28} className="text-danger" style={{ marginBottom: "0.75rem" }} />
+              <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.weaknesses.title}</h3>
+              <p className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>{t.dashboard.modes.weaknesses.desc}</p>
             </Link>
-            <Link href="/learn/spatial" className="card" style={{ flex: "1", minWidth: "200px", textDecoration: "none", display: "block" }}>
-              <FaMapMarkerAlt size={32} className="text-success" style={{ marginBottom: "1rem" }} />
-              <h3>{t.dashboard.modes.spatial.title}</h3>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>{t.dashboard.modes.spatial.desc}</p>
+            <Link href="/learn/spatial" className="card" style={{ flex: "1", minWidth: "180px", textDecoration: "none", display: "block", padding: "1.25rem" }}>
+              <FaMapMarkerAlt size={28} className="text-success" style={{ marginBottom: "0.75rem" }} />
+              <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.spatial.title}</h3>
+              <p className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>{t.dashboard.modes.spatial.desc}</p>
             </Link>
-            <Link href="/map" className="card" style={{ flex: "1", minWidth: "200px", textDecoration: "none", display: "block", background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-hover))" }}>
-              <FaGlobe size={32} className="text-primary" style={{ marginBottom: "1rem" }} />
-              <h3>{t.dashboard.modes.global.title}</h3>
-              <p className="text-muted" style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>{t.dashboard.modes.global.desc}</p>
+            <Link href="/map" className="card" style={{ flex: "1", minWidth: "180px", textDecoration: "none", display: "block", padding: "1.25rem", background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-hover))" }}>
+              <FaGlobe size={28} className="text-primary" style={{ marginBottom: "0.75rem" }} />
+              <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.global.title}</h3>
+              <p className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>{t.dashboard.modes.global.desc}</p>
             </Link>
           </div>
         </>
