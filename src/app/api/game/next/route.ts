@@ -16,13 +16,16 @@ export async function GET(req: Request) {
 
     const userId = (session.user as any).id;
 
-    // Fetch user progress for spaced repetition calculation
-    const userProgress = await prisma.userProgress.findMany({
-      where: { userId },
-      include: { country: true }
-    });
+    // Fetch user progress and country pool in parallel
+    const [userProgress, fullPool] = await Promise.all([
+      prisma.userProgress.findMany({
+        where: { userId },
+        include: { country: true }
+      }),
+      prisma.country.findMany()
+    ]);
 
-    let pool = await prisma.country.findMany();
+    let pool = fullPool;
     
     // Filter pool by mode
     if (mode === "continents" && continent) {

@@ -20,11 +20,14 @@ export async function POST(req: Request) {
 
     const userId = (session.user as any).id;
 
-    // Fetch or create user progress
-    let progress = await prisma.userProgress.findUnique({
-      where: { userId_countryId: { userId, countryId } }
-    });
+    // Parallelize all initial fetches
+    const [progressResult, user, country] = await Promise.all([
+      prisma.userProgress.findUnique({ where: { userId_countryId: { userId, countryId } } }),
+      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.country.findUnique({ where: { id: countryId } })
+    ]);
 
+    let progress = progressResult;
     if (!progress) {
       progress = await prisma.userProgress.create({
         data: { userId, countryId }
@@ -65,7 +68,10 @@ export async function POST(req: Request) {
     const nextReview = new Date();
     nextReview.setDate(nextReview.getDate() + interval);
 
-    await prisma.userProgress.update({
+    // Prepare all updates to execute in parallel
+    const updatePromises = [];
+
+    updatePromises.push(prisma.userProgress.update({
       where: { id: progress.id },
       data: {
         easeFactor,
@@ -76,10 +82,9 @@ export async function POST(req: Request) {
         lastReviewed: new Date(),
         nextReview
       }
-    });
+    }));
 
     // Update Gamification for User
-    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user) {
       let { xp, currentStreak, longestStreak, lastPlayedAt, level, flagCorrect, flagWrong, spatialCorrect, spatialWrong } = user;
       
@@ -122,21 +127,21 @@ export async function POST(req: Request) {
         else spatialWrong += 1;
       }
 
-      await prisma.user.update({
+      updatePromises.push(prisma.user.update({
         where: { id: userId },
         data: {
           xp, level, currentStreak, longestStreak, lastPlayedAt: new Date(),
           flagCorrect, flagWrong, spatialCorrect, spatialWrong
         }
-      });
+      }));
     }
 
-    // Return the country details for feedback view
-    const country = await prisma.country.findUnique({ where: { id: countryId } });
+    // Execute all updates in parallel
+    await Promise.all(updatePromises);
 
     return NextResponse.json({
       success: true,
-      country,
+      country, // Fetched initially in parallel
       xpGained: isCorrect ? 10 : 2,
     });
 
