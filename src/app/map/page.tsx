@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
@@ -25,7 +25,7 @@ interface Progress {
   }
 }
 
-export default function GlobalMapPage() {
+function GlobalMapContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const userId = searchParams.get("userId");
@@ -72,7 +72,7 @@ export default function GlobalMapPage() {
     };
 
     loadMapData();
-  }, []);
+  }, [userId]);
 
   if (loading) return <div className="container flex justify-center items-center" style={{ minHeight: "100vh" }}>{t.map.loading}</div>;
 
@@ -161,5 +161,13 @@ export default function GlobalMapPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function GlobalMapPage() {
+  return (
+    <Suspense fallback={<div className="container flex justify-center items-center" style={{ minHeight: "100vh" }}>Cargando mapa...</div>}>
+      <GlobalMapContent />
+    </Suspense>
   );
 }
