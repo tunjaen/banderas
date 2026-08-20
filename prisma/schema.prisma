@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  
+  // Gamification fields
+  xp            Int       @default(0)
+  level         Int       @default(1)
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastPlayedAt  DateTime?
+
+  // Game Mode Stats
+  flagCorrect   Int       @default(0)
+  flagWrong     Int       @default(0)
+  spatialCorrect Int      @default(0)
+  spatialWrong   Int      @default(0)
+
+  progress      UserProgress[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Country {
+  id        String   @id // ISO 3-letter code
+  name      String
+  continent String
+  capital   String
+  isoCode     String   // 2-letter code for flags
+  lat         Float
+  lng         Float
+
+  nameEn      String   @default("")
+  continentEn String   @default("")
+  capitalEn   String   @default("")
+
+  progress  UserProgress[]
+}
+
+model UserProgress {
+  id             String   @id @default(cuid())
+  userId         String
+  countryId      String
+  
+  status         String   @default("Nuevo") // Nuevo, Aprendiendo, Familiar, Dominado
+  correctAnswers Int      @default(0)
+  wrongAnswers   Int      @default(0)
+  
+  // Spaced repetition fields (SM-2 based)
+  easeFactor     Float    @default(2.5) // Minimum 1.3
+  interval       Int      @default(0) // Interval in days
+  nextReview     DateTime @default(now()) // Next time it should be reviewed
+  lastReviewed   DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country        Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, countryId])
+}
+
+// NextAuth Required Models
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
