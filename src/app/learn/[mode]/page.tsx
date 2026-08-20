@@ -120,27 +120,56 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   };
 
   if ((mode === "continents" || mode === "spatial") && !continent) {
-    const categories = ["Mundo", "África", "Asia", "Europa", "América del Norte", "América del Sur", "Oceanía", "Islas"];
+    const categories = [
+      { id: "Mundo", name: "Mundo", nameEn: "World", icon: "🌍", color: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.5)" },
+      { id: "África", name: "África", nameEn: "Africa", icon: "🌍" },
+      { id: "Asia", name: "Asia", nameEn: "Asia", icon: "🌏" },
+      { id: "Europa", name: "Europa", nameEn: "Europe", icon: "🇪🇺" },
+      { id: "América del Norte", name: "América del Norte", nameEn: "North America", icon: "🌎" },
+      { id: "América del Sur", name: "América del Sur", nameEn: "South America", icon: "🌎" },
+      { id: "Oceanía", name: "Oceanía", nameEn: "Oceania", icon: "🌏" },
+      { id: "Islas", name: "Islas", nameEn: "Islands", icon: "🏝️", color: "rgba(14, 165, 233, 0.12)", border: "rgba(14, 165, 233, 0.5)" },
+    ];
+
     return (
-      <div className="container" style={{ padding: "2rem" }}>
-        <button onClick={() => router.push("/dashboard")} className="btn btn-outline" style={{ marginBottom: "2rem" }}>Volver</button>
-        <h1 className="text-center" style={{ marginBottom: "2rem" }}>Elige una Región o Categoría</h1>
-        <div className="flex justify-center flex-wrap gap-4">
-          {categories.map(c => (
-            <button 
-              key={c} 
-              onClick={() => router.push(`/learn/${mode}?continent=${encodeURIComponent(c)}`)} 
-              className="card hover-scale" 
-              style={{ 
-                width: "200px", textAlign: "center", fontSize: "1.25rem", fontWeight: "600", 
-                color: "var(--color-text)", cursor: "pointer", border: "1px solid rgba(255,255,255,0.1)",
-                background: c === "Islas" ? "rgba(14, 165, 233, 0.1)" : c === "Mundo" ? "rgba(16, 185, 129, 0.1)" : "var(--color-surface)",
-                borderColor: c === "Islas" ? "rgba(14, 165, 233, 0.5)" : c === "Mundo" ? "rgba(16, 185, 129, 0.5)" : "rgba(255,255,255,0.1)"
-              }}
-            >
-              {c === "Islas" ? "🏝️ Islas" : c === "Mundo" ? "🌍 Mundo" : c}
-            </button>
-          ))}
+      <div className="container animate-fade-in" style={{ padding: "1.5rem 1rem", maxWidth: "800px" }}>
+        <button onClick={() => router.push("/dashboard")} className="btn btn-outline" style={{ marginBottom: "1.5rem" }}>
+          {lang === 'en' ? "← Back" : "← Volver"}
+        </button>
+        <h1 className="text-center" style={{ marginBottom: "1.5rem", fontSize: "1.75rem", fontWeight: "800" }}>
+          {lang === 'en' ? "Choose a Region or Category" : "Elige una Región o Categoría"}
+        </h1>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
+          {categories.map(c => {
+            const label = lang === 'en' ? c.nameEn : c.name;
+            return (
+              <button 
+                key={c.id} 
+                onClick={() => router.push(`/learn/${mode}?continent=${encodeURIComponent(c.id)}`)} 
+                className="card hover-scale" 
+                style={{ 
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "1.25rem 0.5rem", 
+                  textAlign: "center", 
+                  fontSize: "0.95rem", 
+                  fontWeight: "700", 
+                  color: "var(--color-text)", 
+                  cursor: "pointer", 
+                  border: `1px solid ${c.border || "rgba(255,255,255,0.1)"}`,
+                  background: c.color || "var(--color-surface)",
+                  borderRadius: "var(--radius-md)",
+                  gap: "0.5rem"
+                }}
+              >
+                <span style={{ fontSize: "2rem" }}>{c.icon}</span>
+                <span style={{ wordBreak: "break-word", lineHeight: "1.2" }}>{label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
