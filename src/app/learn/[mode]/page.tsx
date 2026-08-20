@@ -108,7 +108,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
         <h1 className="text-center" style={{ marginBottom: "2rem" }}>Elige un Continente</h1>
         <div className="flex justify-center flex-wrap gap-4">
           {continents.map(c => (
-            <button key={c} onClick={() => router.push(`/learn/continents?continent=${encodeURIComponent(c)}`)} className="card" style={{ width: "200px", textAlign: "center", fontSize: "1.25rem", fontWeight: "600" }}>
+            <button key={c} onClick={() => router.push(`/learn/continents?continent=${encodeURIComponent(c)}`)} className="card hover-scale" style={{ width: "200px", textAlign: "center", fontSize: "1.25rem", fontWeight: "600", color: "var(--color-text)", cursor: "pointer", border: "1px solid rgba(255,255,255,0.1)" }}>
               {c}
             </button>
           ))}
@@ -253,12 +253,28 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                 <p className="text-muted">{t.quiz.capital} {lang === 'en' ? feedback.country.capitalEn : feedback.country.capital}</p>
                 <p className="text-muted">{t.quiz.continent} {lang === 'en' ? feedback.country.continentEn : feedback.country.continent}</p>
                 <p className="text-muted font-bold mt-2" style={{ color: "var(--color-warning)" }}>+{feedback.xpGained} XP</p>
+                {["SJM", "PRI", "GRL", "MAC", "PYF", "NCL", "GUF", "HKG", "BMU", "CYM"].includes(feedback.country.id) && (
+                  <div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "rgba(245, 158, 11, 0.1)", borderLeft: "3px solid var(--color-warning)", borderRadius: "0 var(--radius-sm) var(--radius-sm) 0" }}>
+                    <p style={{ color: "var(--color-warning)", fontSize: "0.875rem", margin: 0, fontWeight: "600" }}>
+                      {lang === 'en' 
+                        ? "Extra Challenge: This is an overseas territory or autonomous dependency."
+                        : "Reto Extra: Este es un territorio de ultramar o dependencia autónoma."}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             
-            <div style={{ width: "300px", height: "150px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "2px solid rgba(255,255,255,0.1)" }}>
-               <Map lat={feedback.country.lat} lng={feedback.country.lng} name={lang === 'en' ? feedback.country.nameEn : feedback.country.name} />
-            </div>
+            {mode === "spatial" ? (
+              <div style={{ width: "200px", height: "150px", borderRadius: "var(--radius-md)", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`https://flagcdn.com/w320/${feedback.country.isoCode.toLowerCase()}.png`} alt="Flag" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-md)" }} />
+              </div>
+            ) : (
+              <div style={{ width: "300px", height: "150px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "2px solid rgba(255,255,255,0.1)" }}>
+                 <Map lat={feedback.country.lat} lng={feedback.country.lng} name={lang === 'en' ? feedback.country.nameEn : feedback.country.name} />
+              </div>
+            )}
 
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "150px" }}>
               <button onClick={fetchQuestion} className="btn" style={{ 

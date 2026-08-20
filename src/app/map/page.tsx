@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -27,9 +27,12 @@ interface Progress {
 
 export default function GlobalMapPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const userId = searchParams.get("userId");
   const { t, lang } = useLanguage();
   const [geoData, setGeoData] = useState<any>(null);
   const [progress, setProgress] = useState<Record<string, Progress>>({});
+  const [targetUserName, setTargetUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +51,8 @@ export default function GlobalMapPage() {
 
         setGeoData(geoJson);
 
-        const progRes = await fetch("/api/stats");
+        const url = userId ? `/api/stats?userId=${userId}` : "/api/stats";
+        const progRes = await fetch(url);
         if (progRes.ok) {
           const progData = await progRes.json();
           const pMap: Record<string, Progress> = {};
@@ -56,6 +60,9 @@ export default function GlobalMapPage() {
             pMap[p.countryId] = p;
           });
           setProgress(pMap);
+          if (progData.userName && userId) {
+            setTargetUserName(progData.userName);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -124,7 +131,7 @@ export default function GlobalMapPage() {
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       <header className="flex justify-between items-center" style={{ padding: "1rem 2rem", background: "var(--color-surface)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: "700" }}>{t.map.title}</h1>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "700" }}>{targetUserName ? `Mapa de ${targetUserName.split(" ")[0]}` : t.map.title}</h1>
         <div className="flex gap-4 items-center">
           <div className="flex items-center gap-2" style={{ fontSize: "0.875rem" }}>
             <span style={{ width: "12px", height: "12px", background: "#334155", borderRadius: "2px" }}></span> {t.map.notLearned}
@@ -138,7 +145,7 @@ export default function GlobalMapPage() {
           <div className="flex items-center gap-2" style={{ fontSize: "0.875rem" }}>
             <span style={{ width: "12px", height: "12px", background: "#10b981", borderRadius: "2px" }}></span> {t.map.mastered}
           </div>
-          <button onClick={() => router.push("/dashboard")} className="btn btn-outline" style={{ padding: "0.5rem 1rem", marginLeft: "1rem" }}>{t.map.backBtn}</button>
+          <button onClick={() => userId ? router.back() : router.push("/dashboard")} className="btn btn-outline" style={{ padding: "0.5rem 1rem", marginLeft: "1rem" }}>{t.map.backBtn}</button>
         </div>
       </header>
 

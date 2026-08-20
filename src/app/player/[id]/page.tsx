@@ -47,6 +47,13 @@ export default function PlayerProfilePage() {
           <p className="text-muted" style={{ fontSize: "1.25rem" }}>
             {t.profile?.level || "Level"} {user.level} • {user.xp} XP
           </p>
+          <button 
+            onClick={() => router.push(`/map?userId=${user.id}`)} 
+            className="btn btn-outline" 
+            style={{ marginTop: "1rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+          >
+            <FaGlobe /> {lang === 'en' ? "View Global Map" : "Ver Mapa Global 🌍"}
+          </button>
         </div>
         <div className="flex-col items-center gap-2">
           <FaFire size={32} className="text-danger" />
