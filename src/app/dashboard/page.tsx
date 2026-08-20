@@ -25,9 +25,20 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const totalCountries = await prisma.country.count();
+  const totalCountries = await prisma.country.count() || 244;
   const masteredCount = user.progress.filter(p => p.status === "Dominado").length;
-  const learningCount = user.progress.filter(p => p.status === "Aprendiendo" || p.status === "Familiar").length;
+  const familiarCount = user.progress.filter(p => p.status === "Familiar").length;
+  const learningCount = user.progress.filter(p => p.status === "Aprendiendo").length;
+  const unseenCount = Math.max(0, totalCountries - (masteredCount + familiarCount + learningCount));
 
-  return <DashboardClient user={user} masteredCount={masteredCount} learningCount={learningCount} />;
+  return (
+    <DashboardClient 
+      user={user} 
+      totalCountries={totalCountries}
+      masteredCount={masteredCount} 
+      familiarCount={familiarCount}
+      learningCount={learningCount} 
+      unseenCount={unseenCount}
+    />
+  );
 }

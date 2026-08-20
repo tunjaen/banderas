@@ -10,6 +10,8 @@ export async function GET() {
         image: true,
         level: true,
         xp: true,
+        spatialCorrect: true,
+        spatialWrong: true,
       },
       orderBy: [
         { xp: 'desc' }
