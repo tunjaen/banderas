@@ -1,24 +1,21 @@
 "use client";
 
-export default function SteveFireCanvas({ size = 90 }: { size?: number }) {
-  const width = size;
-  const height = Math.round(size * 1.5);
+export default function SteveFireCanvas({ size = 80 }: { size?: number }) {
+  const height = Math.round(size * 1.35);
 
   return (
     <iframe
       src="/steve-fire.html"
-      width={width}
-      height={height}
+      title="Steve Fire Animation"
       style={{
-        width: `${width}px`,
+        width: `${size}px`,
         height: `${height}px`,
         border: "none",
         background: "transparent",
         pointerEvents: "none",
+        display: "block",
         overflow: "hidden",
-        display: "block"
       }}
-      allowTransparency={true}
     />
   );
 }
