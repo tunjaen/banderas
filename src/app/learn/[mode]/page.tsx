@@ -20,6 +20,90 @@ interface Question {
   options: { id: string; name: string; nameEn: string; isoCode: string }[];
 }
 
+function AnimatedFlameIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 50 65" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ overflow: "visible" }}
+    >
+      <defs>
+        <linearGradient id="flameGradOuter" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#D97706" />
+          <stop offset="50%" stopColor="#EF4444" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+        <linearGradient id="flameGradMid" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#F59E0B" />
+          <stop offset="100%" stopColor="#FBBF24" />
+        </linearGradient>
+        <linearGradient id="flameGradCore" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#FDE047" />
+          <stop offset="100%" stopColor="#FFFFFF" />
+        </linearGradient>
+        <style>{`
+          @keyframes flameWave1 {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1, 0.93) rotate(-4deg); }
+          }
+          @keyframes flameWave2 {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(0.9, 1.12) rotate(5deg); }
+          }
+          @keyframes flameSpark {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-18px) scale(0.2); opacity: 0; }
+          }
+          .flame-layer-back {
+            animation: flameWave1 1.1s infinite ease-in-out;
+            transform-origin: bottom center;
+          }
+          .flame-layer-front {
+            animation: flameWave2 0.75s infinite ease-in-out;
+            transform-origin: bottom center;
+          }
+          .flame-spark-1 {
+            animation: flameSpark 1s infinite ease-out;
+            transform-origin: center;
+          }
+          .flame-spark-2 {
+            animation: flameSpark 0.85s infinite ease-out 0.35s;
+            transform-origin: center;
+          }
+        `}</style>
+      </defs>
+
+      {/* Outer Flame Layer */}
+      <path 
+        className="flame-layer-back"
+        d="M25 2 C25 2, 38 18, 38 32 C38 46, 32 58, 25 58 C18 58, 12 46, 12 32 C12 18, 25 2, 25 2 Z" 
+        fill="url(#flameGradOuter)"
+      />
+
+      {/* Middle Flame Layer */}
+      <path 
+        className="flame-layer-front"
+        d="M25 14 C25 14, 34 26, 34 36 C34 46, 30 54, 25 54 C20 54, 16 46, 16 36 C16 26, 25 14, 25 14 Z" 
+        fill="url(#flameGradMid)"
+      />
+
+      {/* Core Hot Flame Layer */}
+      <path 
+        className="flame-layer-back"
+        d="M25 28 C25 28, 30 35, 30 42 C30 48, 28 52, 25 52 C22 52, 20 48, 20 42 C20 35, 25 28, 25 28 Z" 
+        fill="url(#flameGradCore)"
+      />
+
+      {/* Rising Sparks */}
+      <circle className="flame-spark-1" cx="21" cy="12" r="2.5" fill="#FEF08A" />
+      <circle className="flame-spark-2" cx="29" cy="8" r="2" fill="#FDE047" />
+    </svg>
+  );
+}
+
 export default function LearnPage({ params }: { params: Promise<{ mode: string }> }) {
   const resolvedParams = use(params);
   const mode = resolvedParams.mode;
@@ -285,11 +369,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          ...(isMastered && mode !== "spatial" ? {
-            boxShadow: "0 0 25px #F59E0B, 0 0 45px #EF4444",
-            borderRadius: "var(--radius-sm)",
-            border: "2px solid #F59E0B",
-          } : mode === "spatial" ? {
+          ...(mode === "spatial" ? {
             aspectRatio: "3/2", 
             borderRadius: "var(--radius-md)", 
             overflow: "hidden", 
@@ -306,9 +386,9 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
               color: "#FFF", padding: "0.25rem 0.65rem", borderRadius: "12px", 
               fontSize: "0.75rem", fontWeight: "800", 
               boxShadow: "0 4px 12px rgba(239,68,68,0.6)", zIndex: 10,
-              display: "flex", alignItems: "center", gap: "0.3rem"
+              display: "flex", alignItems: "center", gap: "0.35rem"
             }}>
-              <FaFire size={12} /> Dominado
+              <AnimatedFlameIcon size={16} /> Dominado
             </div>
           )}
 
