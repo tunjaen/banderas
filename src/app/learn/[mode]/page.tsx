@@ -394,9 +394,10 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           {isMastered && (
             <div style={{ 
               position: "absolute", 
-              top: "-60px", 
-              right: "-30px", 
+              top: "-110px", 
+              right: "-35px", 
               zIndex: 10,
+              overflow: "visible",
               filter: "drop-shadow(0 6px 14px rgba(226,59,0,0.75))"
             }}>
               <SteveFireCanvas size={110} />

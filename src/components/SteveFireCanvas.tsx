@@ -45,7 +45,7 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
     const width = canvas.width;
     const height = canvas.height;
     const centerX = width / 2;
-    const baseY = height * 0.65;
+    const baseY = height * 0.45;
 
     const spawnFireBlob = () => {
       const color = colors[Math.floor(Math.random() * colors.length)];
@@ -190,7 +190,7 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
   }, [size]);
 
   const canvasWidth = size;
-  const canvasHeight = Math.round(size * 1.6);
+  const canvasHeight = Math.round(size * 2.0);
 
   return (
     <canvas
