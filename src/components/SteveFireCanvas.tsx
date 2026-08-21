@@ -114,13 +114,10 @@ export default function SteveFireCanvas({ size = 56 }: { size?: number }) {
           `}</style>
         </defs>
 
-        {/* Ambient Flame Glow */}
-        <ellipse cx="50" cy="95" rx="42" ry="24" fill="url(#customFlameGlow)" />
-
         {/* Outer Radiant Flame Layer */}
         <path 
           className="flame-outer"
-          d="M50 8 C50 8, 76 38, 76 68 C76 94 64 108 50 108 C36 108 24 94 24 68 C24 38, 50 8, 50 8 Z" 
+          d="M50 6 C50 6, 78 36, 76 64 C74 88, 58 100, 50 106 C42 100, 26 88, 24 64 C22 36, 50 6, 50 6 Z" 
           fill="url(#customFlameOuterGrad)"
           filter="drop-shadow(0 2px 8px rgba(234, 88, 12, 0.5))"
         />
@@ -128,14 +125,14 @@ export default function SteveFireCanvas({ size = 56 }: { size?: number }) {
         {/* Mid Golden Flame Layer */}
         <path 
           className="flame-mid"
-          d="M50 24 C50 24, 68 48, 68 72 C68 93 60 102 50 102 C40 102 32 93 32 72 C32 48, 50 24, 50 24 Z" 
+          d="M50 22 C50 22, 68 46, 67 68 C65 86, 56 96, 50 100 C44 96, 35 86, 33 68 C32 46, 50 22, 50 22 Z" 
           fill="url(#customFlameMidGrad)"
         />
 
         {/* Core White-Hot Flame Layer */}
         <path 
           className="flame-core"
-          d="M50 44 C50 44 60 64 60 80 C60 95 56 98 50 98 C44 98 40 95 40 80 C40 64, 50 44, 50 44 Z" 
+          d="M50 42 C50 42, 60 60, 59 76 C58 88, 54 94, 50 96 C46 94, 42 88, 41 76 C40 60, 50 42, 50 42 Z" 
           fill="url(#customFlameCoreGrad)"
         />
 
