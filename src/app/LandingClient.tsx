@@ -10,7 +10,7 @@ export default function LandingClient() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--color-background)", position: "relative" }}>
       
-      <div style={{ position: "absolute", top: "1rem", right: "2rem" }}>
+      <div style={{ position: "absolute", top: "1rem", right: "2rem", zIndex: 50 }}>
         <LanguageSelector />
       </div>
 

@@ -107,10 +107,20 @@ export async function POST(req: Request) {
 
       if (currentStreak > longestStreak) longestStreak = currentStreak;
 
-      // Add XP
-      let xpGained = isCorrect ? 10 : 2;
-      // Bonus for streak
-      if (currentStreak > 5) xpGained += 5;
+      // Add XP according to mastery status & mode
+      const wasDominado = progress?.status === "Dominado";
+      let xpGained = 0;
+
+      if (isCorrect) {
+        if (wasDominado) {
+          xpGained = mode === "world" ? 5 : 0;
+        } else {
+          xpGained = 10;
+          if (currentStreak > 5) xpGained += 5;
+        }
+      } else {
+        xpGained = 2;
+      }
       xp += xpGained;
 
       // Level calculation
@@ -145,7 +155,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       country, // Fetched initially in parallel
-      xpGained: isCorrect ? 10 : 2,
+      xpGained,
     });
 
   } catch (error) {

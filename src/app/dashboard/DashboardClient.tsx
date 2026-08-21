@@ -276,6 +276,11 @@ export default function DashboardClient({
               <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.spatial.title}</h3>
               <p className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>{t.dashboard.modes.spatial.desc}</p>
             </Link>
+            <Link href="/flags" className="card" style={{ textDecoration: "none", display: "block", padding: "1.25rem", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.1), var(--color-surface))", border: "1px solid rgba(168, 85, 247, 0.2)" }}>
+              <FaGlobe size={28} style={{ color: "#A855F7", marginBottom: "0.75rem" }} />
+              <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.allFlags?.title || "Ver todas las banderas"}</h3>
+              <p className="text-muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>{t.dashboard.modes.allFlags?.desc || "Explora el directorio completo y filtra por región."}</p>
+            </Link>
             <Link href="/map" className="card" style={{ textDecoration: "none", display: "block", padding: "1.25rem", background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-hover))" }}>
               <FaGlobe size={28} className="text-primary" style={{ marginBottom: "0.75rem" }} />
               <h3 style={{ fontSize: "1.1rem" }}>{t.dashboard.modes.global.title}</h3>

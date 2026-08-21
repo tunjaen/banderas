@@ -13,6 +13,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const mode = searchParams.get("mode") || "world";
     const continent = searchParams.get("continent"); // for 'continents' mode
+    const excludeParam = searchParams.get("exclude") || "";
+    const excludeIds = excludeParam.split(",").map(id => id.trim()).filter(Boolean);
 
     const userId = (session.user as any).id;
 
@@ -38,27 +40,36 @@ export async function GET(req: Request) {
       }
     } else if (mode === "weaknesses") {
       const weakIds = userProgress
-        .filter(p => p.status === "Aprendiendo" || (p.correctAnswers / (p.correctAnswers + p.wrongAnswers) < 0.6))
+        .filter(p => p.status === "Aprendiendo" || (p.correctAnswers / Math.max(1, p.correctAnswers + p.wrongAnswers) < 0.6))
         .map(p => p.countryId);
       pool = pool.filter(c => weakIds.includes(c.id));
       if (pool.length === 0) {
-        // Fallback if no weaknesses found
-        pool = await prisma.country.findMany(); 
+        pool = fullPool; 
       }
     }
 
+    // Exclude already asked countries in the current session
+    let availablePool = pool.filter(c => !excludeIds.includes(c.id));
+    if (availablePool.length === 0) {
+      availablePool = pool; // Fallback if all countries in pool have been asked
+    }
+
     const now = new Date();
-    
-    // Create a map of progress
     const progressMap = new Map(userProgress.map(p => [p.countryId, p]));
 
-    // Determine the next target country
-    // Priority: 1. Overdue reviews 2. New countries 3. Fallback to random
+    // Separate availablePool into unmastered vs mastered countries to reduce frequency of mastered ones
+    const nonMasteredPool = availablePool.filter(c => progressMap.get(c.id)?.status !== "Dominado");
+    const masteredPool = availablePool.filter(c => progressMap.get(c.id)?.status === "Dominado");
+
+    // 85% chance to pick from non-mastered pool if available
+    const pickFromNonMastered = nonMasteredPool.length > 0 && (masteredPool.length === 0 || Math.random() < 0.85);
+    const candidatePool = pickFromNonMastered ? nonMasteredPool : (masteredPool.length > 0 ? masteredPool : availablePool);
+
     let targetCountry = null;
     let overdue = [];
     let nuevos = [];
 
-    for (const c of pool) {
+    for (const c of candidatePool) {
       const p = progressMap.get(c.id);
       if (!p) {
         nuevos.push(c);
@@ -68,18 +79,15 @@ export async function GET(req: Request) {
     }
 
     if (overdue.length > 0) {
-      // Sort overdue by how late they are
       overdue.sort((a, b) => progressMap.get(a.id)!.nextReview.getTime() - progressMap.get(b.id)!.nextReview.getTime());
-      targetCountry = overdue[0]; // Pick the most overdue
+      targetCountry = overdue[0];
     } else if (nuevos.length > 0) {
-      // Pick a random new country
       targetCountry = nuevos[Math.floor(Math.random() * nuevos.length)];
     } else {
-      // Fallback: pick a random country from pool
-      targetCountry = pool[Math.floor(Math.random() * pool.length)];
+      targetCountry = candidatePool[Math.floor(Math.random() * candidatePool.length)];
     }
 
-    // Generate 3 wrong options from the same pool (or global pool)
+    // Generate 3 wrong options from the main pool
     const options = [targetCountry];
     while (options.length < 4) {
       const randomOption = pool[Math.floor(Math.random() * pool.length)];
@@ -93,19 +101,26 @@ export async function GET(req: Request) {
       id: o.id,
       name: o.name,
       nameEn: o.nameEn,
-      isoCode: o.isoCode, // for flag rendering
+      isoCode: (o.isoCode.toUpperCase() === "SJM" || o.isoCode.toUpperCase() === "BVT") ? "no" : o.isoCode,
     }));
 
-    // We send back the target id so the client can submit it, but we don't expose which one is correct directly in the options array in a way that gives it away, although the client knows it when rendering if we send `correctId`.
-    // Actually, we must send the question. The question could be "What flag is this?" or "Where is this country?".
+    const targetProgress = progressMap.get(targetCountry.id);
+    const targetStatus = targetProgress?.status || "Nuevo";
     
+    // Normalize Norwegian territories flag code to Norway's flag ("no")
+    let targetFlagCode = targetCountry.isoCode;
+    if (targetFlagCode.toUpperCase() === "SJM" || targetFlagCode.toUpperCase() === "BVT") {
+      targetFlagCode = "no";
+    }
+
     return NextResponse.json({
       targetId: targetCountry.id,
-      flagCode: targetCountry.isoCode,
+      flagCode: targetFlagCode,
       countryName: targetCountry.name,
       countryNameEn: targetCountry.nameEn,
       lat: targetCountry.lat,
       lng: targetCountry.lng,
+      status: targetStatus,
       options: shuffledOptions.map(o => ({
         id: o.id,
         name: o.name,

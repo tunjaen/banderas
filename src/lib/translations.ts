@@ -14,13 +14,14 @@ export const translations = {
       learning: "Aprendiendo",
       unseen: "Por Descubrir",
       totalCountries: "Países Totales",
-      startSession: "Comenzar sesión de estudio",
+      startSession: "Elige modo de juego",
       modes: {
         world: { title: "Todo el Mundo", desc: "Mezcla banderas de todos los continentes." },
         continents: { title: "Por Continente", desc: "Enfócate en una región específica." },
         weaknesses: { title: "Repasar Errores", desc: "Practica las banderas que más te cuestan." },
         spatial: { title: "Mapa Espacial", desc: "Adivina qué país está marcado en el globo terráqueo." },
-        global: { title: "Tu Mapa Global", desc: "Visualiza tu progreso en el mundo." }
+        global: { title: "Tu Mapa Global", desc: "Visualiza tu progreso en el mundo." },
+        allFlags: { title: "Ver todas las banderas", desc: "Explora el directorio completo, filtra por región y consulta detalles." }
       },
       tabs: {
         progress: "Mi Progreso",
@@ -90,7 +91,7 @@ export const translations = {
     },
     landing: {
       title: "Aprende las banderas del mundo",
-      subtitle: "Memoriza las banderas de todos los países de forma divertida y eficiente con nuestro sistema de repetición espaciada.",
+      subtitle: "Juega, pícate con la familia y aprende las banderas del mundo sin darte cuenta. Mediante el método de repetición espaciada adaptativa aprendes todas las banderas de un continente en un día.",
       cta: "Comenzar ahora",
       login: "Ya tengo una cuenta"
     },
@@ -126,13 +127,14 @@ export const translations = {
       learning: "Learning",
       unseen: "Unseen",
       totalCountries: "Total Countries",
-      startSession: "Start Session",
+      startSession: "Choose Game Mode",
       modes: {
         world: { title: "The Whole World", desc: "Mix flags from all continents." },
         continents: { title: "By Continent", desc: "Focus on a specific region." },
         weaknesses: { title: "Review Mistakes", desc: "Practice the flags you struggle with." },
         spatial: { title: "Spatial Map", desc: "Guess which country is highlighted on the globe." },
-        global: { title: "Your Global Map", desc: "Visualize your progress in the world." }
+        global: { title: "Your Global Map", desc: "Visualize your progress in the world." },
+        allFlags: { title: "View All Flags", desc: "Explore full country directory, filter by region and view details." }
       },
       tabs: {
         progress: "My Progress",
@@ -202,7 +204,7 @@ export const translations = {
     },
     landing: {
       title: "Learn the flags of the world",
-      subtitle: "Memorize the flags of all countries in a fun and efficient way with our spaced repetition system.",
+      subtitle: "Play, challenge your family, and learn the flags of the world effortlessly. Using adaptive spaced repetition, master all flags of a continent in a single day.",
       cta: "Start now",
       login: "I already have an account"
     },
