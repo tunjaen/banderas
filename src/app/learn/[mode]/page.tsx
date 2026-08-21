@@ -392,14 +392,14 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
 
           {/* Flaming Flag Badge for Mastered Countries */}
           {isMastered && (
-            <div style={{
-              position: "absolute",
-              top: "-34px",
-              right: "-22px",
+            <div style={{ 
+              position: "absolute", 
+              top: "-45px", 
+              right: "-30px", 
               zIndex: 10,
               filter: "drop-shadow(0 6px 14px rgba(226,59,0,0.75))"
             }}>
-              <SteveFireCanvas size={80} />
+              <SteveFireCanvas size={110} />
             </div>
           )}
 

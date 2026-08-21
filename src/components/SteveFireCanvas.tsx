@@ -45,46 +45,46 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
     const width = canvas.width;
     const height = canvas.height;
     const centerX = width / 2;
-    const baseY = height * 0.85;
+    const baseY = height * 0.88;
 
     const spawnFireBlob = () => {
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const maxLife = 28 + Math.random() * 20;
+      const maxLife = 30 + Math.random() * 22;
       fireBlobs.push({
-        x: centerX + (Math.random() * (width * 0.24) - width * 0.12),
+        x: centerX + (Math.random() * (width * 0.28) - width * 0.14),
         y: baseY,
-        vx: (Math.random() * 0.8 - 0.4),
-        vy: -(1.8 + Math.random() * 1.4),
-        size: width * 0.42 + Math.random() * (width * 0.22),
+        vx: (Math.random() * 0.6 - 0.3),
+        vy: -(1.6 + Math.random() * 1.5),
+        size: width * 0.48 + Math.random() * (width * 0.2),
         color,
         life: 0,
         maxLife,
       });
 
       // Spawn cutout mask to carve shape dynamically on outer edges
-      if (Math.random() > 0.4) {
+      if (Math.random() > 0.38) {
         const side = Math.random() > 0.5 ? 1 : -1;
         fireBlobs.push({
-          x: centerX + side * (width * 0.32 + Math.random() * (width * 0.12)),
+          x: centerX + side * (width * 0.34 + Math.random() * (width * 0.12)),
           y: baseY - 5,
-          vx: side * (0.5 + Math.random() * 0.6),
-          vy: -(1.5 + Math.random() * 1.2),
-          size: width * 0.26 + Math.random() * (width * 0.1),
+          vx: side * (0.4 + Math.random() * 0.5),
+          vy: -(1.4 + Math.random() * 1.2),
+          size: width * 0.32 + Math.random() * (width * 0.1),
           color: "#000000",
           life: 0,
-          maxLife: 20 + Math.random() * 12,
+          maxLife: 22 + Math.random() * 14,
           isCutout: true
         });
       }
 
       // Spawn rising embers
-      if (Math.random() > 0.4) {
+      if (Math.random() > 0.35) {
         embers.push({
-          x: centerX + (Math.random() * (width * 0.4) - width * 0.2),
+          x: centerX + (Math.random() * (width * 0.5) - width * 0.25),
           y: baseY - 10,
-          vx: (Math.random() * 1.6 - 0.8),
-          vy: -(2.5 + Math.random() * 2),
-          size: 1.5 + Math.random() * 2,
+          vx: (Math.random() * 1.4 - 0.7),
+          vy: -(2.2 + Math.random() * 2.2),
+          size: 1.8 + Math.random() * 2.2,
           color: emberColors[Math.floor(Math.random() * emberColors.length)],
           alpha: 1
         });
@@ -102,12 +102,12 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
 
       // 1. Ambient Radial Glow
       ctx.globalCompositeOperation = "source-over";
-      const glowGrad = ctx.createRadialGradient(centerX, baseY, 0, centerX, baseY, width * 0.45);
-      glowGrad.addColorStop(0, "rgba(254, 130, 0, 0.45)");
+      const glowGrad = ctx.createRadialGradient(centerX, baseY, 0, centerX, baseY, width * 0.75);
+      glowGrad.addColorStop(0, "rgba(254, 130, 0, 0.55)");
       glowGrad.addColorStop(1, "rgba(226, 59, 0, 0)");
       ctx.fillStyle = glowGrad;
       ctx.beginPath();
-      ctx.arc(centerX, baseY, width * 0.45, 0, Math.PI * 2);
+      ctx.arc(centerX, baseY, width * 0.75, 0, Math.PI * 2);
       ctx.fill();
 
       // 2. Render Additive Glowing Flame Blobs
