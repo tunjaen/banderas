@@ -23,11 +23,11 @@ interface Question {
 
 function AnimatedFlameIcon({ size = 52 }: { size?: number }) {
   return (
-    <svg 
-      width={size} 
-      height={Math.round(size * 1.3)} 
-      viewBox="0 0 100 130" 
-      fill="none" 
+    <svg
+      width={size}
+      height={Math.round(size * 1.3)}
+      viewBox="0 0 100 130"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{ overflow: "visible" }}
     >
@@ -81,30 +81,30 @@ function AnimatedFlameIcon({ size = 52 }: { size?: number }) {
       <ellipse cx="50" cy="95" rx="35" ry="20" fill="url(#steveGlow)" />
 
       {/* 1. Deep Red Flame Base (#E23B00) */}
-      <path 
+      <path
         className="steve-flame-1"
-        d="M50 10 C50 10 78 40 78 70 C78 95 65 110 50 110 C35 110 22 95 22 70 C22 40 50 10 50 10 Z" 
+        d="M50 10 C50 10 78 40 78 70 C78 95 65 110 50 110 C35 110 22 95 22 70 C22 40 50 10 50 10 Z"
         fill="#E23B00"
       />
 
       {/* 2. Bright Orange Mid Flame (#FE8200) */}
-      <path 
+      <path
         className="steve-flame-2"
-        d="M50 25 C50 25 70 50 70 75 C70 96 61 106 50 106 C39 106 30 96 30 75 C30 50 50 25 50 25 Z" 
+        d="M50 25 C50 25 70 50 70 75 C70 96 61 106 50 106 C39 106 30 96 30 75 C30 50 50 25 50 25 Z"
         fill="#FE8200"
       />
 
       {/* 3. Yellow Inner Flame (#FBE416) */}
-      <path 
+      <path
         className="steve-flame-3"
-        d="M50 42 C50 42 62 62 62 82 C62 98 57 102 50 102 C43 102 38 98 38 82 C38 62 50 42 50 42 Z" 
+        d="M50 42 C50 42 62 62 62 82 C62 98 57 102 50 102 C43 102 38 98 38 82 C38 62 50 42 50 42 Z"
         fill="#FBE416"
       />
 
       {/* 4. White/Light Core (#FDFDB4) */}
-      <path 
+      <path
         className="steve-flame-2"
-        d="M50 58 C50 58 56 72 56 86 C56 96 53 99 50 99 C47 99 44 96 44 86 C44 72 50 58 50 58 Z" 
+        d="M50 58 C50 58 56 72 56 86 C56 96 53 99 50 99 C47 99 44 96 44 86 C44 72 50 58 50 58 Z"
         fill="#FDFDB4"
       />
 
@@ -175,7 +175,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       url.searchParams.set("mode", mode);
       if (continent) url.searchParams.set("continent", continent);
       if (sessionHistory.length > 0) url.searchParams.set("exclude", sessionHistory.join(","));
-      
+
       const res = await fetch(url.toString());
       if (res.ok) {
         const data = await res.json();
@@ -219,10 +219,10 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
     if (selectedId || isSubmitting || !question) return;
     setSelectedId(id);
     setIsSubmitting(true);
-    
+
     const isTimeout = id === "TIMEOUT_FAILED";
     const isCorrect = !isTimeout && id === question.targetId;
-    
+
     try {
       const res = await fetch("/api/game/answer", {
         method: "POST",
@@ -231,7 +231,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       });
       const data = await res.json();
       setFeedback({ ...data, isCorrect, isTimeout });
-      
+
       setQuestionCount(prev => prev + 1);
       if (isCorrect) setCorrectCount(prev => prev + 1);
       setSessionXp(prev => prev + (data.xpGained || 0));
@@ -251,7 +251,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       } catch (err) {
         console.error("Error fetching fun fact:", err);
       }
-      
+
     } catch (e) {
       console.error(e);
     }
@@ -277,26 +277,26 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
         <h1 className="text-center" style={{ marginBottom: "1.5rem", fontSize: "1.75rem", fontWeight: "800" }}>
           {lang === 'en' ? "Choose a Region or Category" : "Elige una Región o Categoría"}
         </h1>
-        
+
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
           {categories.map(c => {
             const label = lang === 'en' ? c.nameEn : c.name;
             return (
-              <button 
-                key={c.id} 
-                onClick={() => router.push(`/learn/${mode}?continent=${encodeURIComponent(c.id)}`)} 
-                className="card hover-scale" 
-                style={{ 
+              <button
+                key={c.id}
+                onClick={() => router.push(`/learn/${mode}?continent=${encodeURIComponent(c.id)}`)}
+                className="card hover-scale"
+                style={{
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: "1.25rem 0.5rem", 
-                  textAlign: "center", 
-                  fontSize: "0.95rem", 
-                  fontWeight: "700", 
-                  color: "var(--color-text)", 
-                  cursor: "pointer", 
+                  padding: "1.25rem 0.5rem",
+                  textAlign: "center",
+                  fontSize: "0.95rem",
+                  fontWeight: "700",
+                  color: "var(--color-text)",
+                  cursor: "pointer",
                   border: `1px solid ${c.border || "rgba(255,255,255,0.1)"}`,
                   background: c.color || "var(--color-surface)",
                   borderRadius: "var(--radius-md)",
@@ -330,7 +330,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
 
   return (
     <div className="container" style={{ maxWidth: "800px", padding: "1rem", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      
+
       {/* Quiz Header */}
       <header className="flex justify-between items-center" style={{ padding: "0.75rem 0", marginBottom: "1.5rem" }}>
         <button onClick={() => router.push("/dashboard")} style={{ fontSize: "1.5rem", color: "var(--color-text-muted)", background: "none", border: "none", cursor: "pointer" }}>
@@ -370,49 +370,49 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
         <h2 style={{ fontSize: "1.5rem", fontWeight: "700", marginBottom: "1.5rem", textAlign: "center" }}>
           {mode === "spatial" ? t.quiz.spatialQ : t.quiz.flagQ}
         </h2>
-        
+
         {/* Question Container / Flag Display */}
-        <div style={{ 
-          position: "relative", 
-          width: "100%", 
-          maxWidth: "400px", 
+        <div style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: "400px",
           minHeight: "200px",
-          marginBottom: "2.5rem", 
+          marginBottom: "2.5rem",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           ...(mode === "spatial" ? {
-            aspectRatio: "3/2", 
-            borderRadius: "var(--radius-md)", 
-            overflow: "hidden", 
-            boxShadow: "var(--shadow-lg)", 
+            aspectRatio: "3/2",
+            borderRadius: "var(--radius-md)",
+            overflow: "hidden",
+            boxShadow: "var(--shadow-lg)",
             border: "2px solid rgba(255,255,255,0.1)"
           } : {})
         }}>
-          
+
           {/* Flaming Flag Badge for Mastered Countries */}
           {isMastered && (
-            <div style={{ 
-              position: "absolute", 
-              top: "-34px", 
-              right: "-22px", 
+            <div style={{
+              position: "absolute",
+              top: "-34px",
+              right: "-22px",
               zIndex: 10,
               filter: "drop-shadow(0 6px 14px rgba(226,59,0,0.75))"
             }}>
-              <SteveFireCanvas size={68} />
+              <SteveFireCanvas size={80} />
             </div>
           )}
 
           {mode === "spatial" ? (
-             <Map lat={question.lat} lng={question.lng} name="?" />
+            <Map lat={question.lat} lng={question.lng} name="?" />
           ) : (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img 
-              src={`https://flagcdn.com/w640/${question.flagCode.toLowerCase()}.png`} 
-              alt="Bandera" 
-              style={{ 
-                maxHeight: "240px", 
-                maxWidth: "100%", 
+            <img
+              src={`https://flagcdn.com/w640/${question.flagCode.toLowerCase()}.png`}
+              alt="Bandera"
+              style={{
+                maxHeight: "240px",
+                maxWidth: "100%",
                 objectFit: "contain",
                 borderRadius: "var(--radius-sm)",
                 boxShadow: "var(--shadow-lg)",
@@ -429,7 +429,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
             const isTarget = opt.id === question.targetId;
             let bgColor = "var(--color-surface)";
             let borderColor = "rgba(255,255,255,0.05)";
-            
+
             if (feedback) {
               if (isTarget) {
                 bgColor = "rgba(16, 185, 129, 0.2)";
@@ -443,7 +443,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
             }
 
             return (
-              <button 
+              <button
                 key={opt.id}
                 onClick={() => handleSelect(opt.id)}
                 disabled={!!feedback}
@@ -469,7 +469,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       {/* Feedback Footer Modal (with Fix for Spatial Mode Text Overlay) */}
       {feedback && (
         <div className="animate-fade-in" style={{
-          position: "fixed", bottom: 0, left: 0, right: 0, 
+          position: "fixed", bottom: 0, left: 0, right: 0,
           padding: "1.75rem",
           background: "#0d1117",
           borderTop: `4px solid ${feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)"}`,
@@ -492,7 +492,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                 </p>
                 <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.capital} {lang === 'en' ? (feedback.country?.capitalEn || "") : (feedback.country?.capital || "")}</p>
                 <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.continent} {lang === 'en' ? (feedback.country?.continentEn || "") : (feedback.country?.continent || "")}</p>
-                
+
                 {feedback.xpGained > 0 ? (
                   <p className="text-muted font-bold mt-2" style={{ color: "var(--color-warning)", margin: "0.4rem 0 0" }}>+{feedback.xpGained} XP</p>
                 ) : (
@@ -502,13 +502,13 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                 {feedback.country?.id && ["SJM", "PRI", "GRL", "MAC", "PYF", "NCL", "GUF", "HKG", "BMU", "CYM"].includes(feedback.country.id) && (
                   <div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "rgba(245, 158, 11, 0.1)", borderLeft: "3px solid var(--color-warning)", borderRadius: "0 var(--radius-sm) var(--radius-sm) 0" }}>
                     <p style={{ color: "var(--color-warning)", fontSize: "0.875rem", margin: 0, fontWeight: "600" }}>
-                      {lang === 'en' 
+                      {lang === 'en'
                         ? "Extra Challenge: This is an overseas territory or autonomous dependency."
                         : "Reto Extra: Este es un territorio de ultramar o dependencia autónoma."}
                     </p>
                   </div>
                 )}
-                
+
                 {funFact && (
                   <div className="animate-fade-in" style={{ marginTop: "0.75rem", padding: "0.75rem", background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)" }}>
                     <p style={{ fontSize: "0.75rem", fontWeight: "bold", color: "var(--color-primary)", marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -521,7 +521,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                 )}
               </div>
             </div>
-            
+
             {mode === "spatial" ? (
               <div style={{ width: "200px", height: "140px", borderRadius: "var(--radius-md)", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -529,12 +529,12 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
               </div>
             ) : (
               <div style={{ width: "280px", height: "140px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "2px solid rgba(255,255,255,0.1)" }}>
-                 <Map lat={feedback.country?.lat || question.lat} lng={feedback.country?.lng || question.lng} name={lang === 'en' ? (feedback.country?.nameEn || question.countryNameEn) : (feedback.country?.name || question.countryName)} />
+                <Map lat={feedback.country?.lat || question.lat} lng={feedback.country?.lng || question.lng} name={lang === 'en' ? (feedback.country?.nameEn || question.countryNameEn) : (feedback.country?.name || question.countryName)} />
               </div>
             )}
 
             <div className="md-w-full md-h-auto" style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "140px" }}>
-              <button onClick={fetchQuestion} className="btn md-w-full" style={{ 
+              <button onClick={fetchQuestion} className="btn md-w-full" style={{
                 background: feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)",
                 color: "white", fontSize: "1.25rem", padding: "1rem 2.5rem", borderRadius: "var(--radius-full)",
                 boxShadow: "0 4px 14px rgba(0,0,0,0.25)"

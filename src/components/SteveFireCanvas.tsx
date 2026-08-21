@@ -49,30 +49,30 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
 
     const spawnFireBlob = () => {
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const maxLife = 25 + Math.random() * 20;
+      const maxLife = 28 + Math.random() * 20;
       fireBlobs.push({
-        x: centerX + (Math.random() * 12 - 6),
+        x: centerX + (Math.random() * (width * 0.24) - width * 0.12),
         y: baseY,
-        vx: (Math.random() * 1.2 - 0.6),
-        vy: -(2.2 + Math.random() * 1.8),
-        size: width * 0.28 + Math.random() * (width * 0.15),
+        vx: (Math.random() * 0.8 - 0.4),
+        vy: -(1.8 + Math.random() * 1.4),
+        size: width * 0.42 + Math.random() * (width * 0.22),
         color,
         life: 0,
         maxLife,
       });
 
-      // Spawn cutout mask to carve shape dynamically
-      if (Math.random() > 0.35) {
+      // Spawn cutout mask to carve shape dynamically on outer edges
+      if (Math.random() > 0.4) {
         const side = Math.random() > 0.5 ? 1 : -1;
         fireBlobs.push({
-          x: centerX + side * (width * 0.22 + Math.random() * (width * 0.15)),
+          x: centerX + side * (width * 0.32 + Math.random() * (width * 0.12)),
           y: baseY - 5,
-          vx: side * (0.6 + Math.random() * 0.8),
-          vy: -(1.8 + Math.random() * 1.5),
-          size: width * 0.22 + Math.random() * (width * 0.1),
+          vx: side * (0.5 + Math.random() * 0.6),
+          vy: -(1.5 + Math.random() * 1.2),
+          size: width * 0.26 + Math.random() * (width * 0.1),
           color: "#000000",
           life: 0,
-          maxLife: 20 + Math.random() * 15,
+          maxLife: 20 + Math.random() * 12,
           isCutout: true
         });
       }
@@ -95,7 +95,7 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
       ctx.clearRect(0, 0, width, height);
 
       // Maintain particle density
-      if (fireBlobs.length < 50) {
+      if (fireBlobs.length < 80) {
         spawnFireBlob();
         spawnFireBlob();
       }
@@ -193,10 +193,10 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
   const canvasHeight = Math.round(size * 1.4);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      width={canvasWidth} 
-      height={canvasHeight} 
+    <canvas
+      ref={canvasRef}
+      width={canvasWidth}
+      height={canvasHeight}
       style={{ width: `${canvasWidth}px`, height: `${canvasHeight}px`, pointerEvents: "none", display: "block" }}
     />
   );
