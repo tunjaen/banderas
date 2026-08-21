@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaFire, FaStar, FaGlobe, FaTrophy, FaMapMarkerAlt, FaChartBar, FaMedal, FaBolt, FaCheckCircle, FaBookOpen, FaQuestionCircle, FaChevronDown, FaChevronUp, FaStopwatch } from "react-icons/fa";
+import { FaFire, FaStar, FaGlobe, FaTrophy, FaMapMarkerAlt, FaChartBar, FaMedal, FaBolt, FaCheckCircle, FaBookOpen, FaQuestionCircle, FaChevronDown, FaChevronUp, FaStopwatch, FaTimes } from "react-icons/fa";
 import LogoutButton from "./LogoutButton";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -14,7 +14,8 @@ export default function DashboardClient({
   masteredCount = 0, 
   familiarCount = 0,
   learningCount = 0,
-  unseenCount = 244
+  unseenCount = 244,
+  isIslandExpert = false
 }: { 
   user: any; 
   totalCountries?: number;
@@ -22,11 +23,13 @@ export default function DashboardClient({
   familiarCount?: number;
   learningCount?: number; 
   unseenCount?: number;
+  isIslandExpert?: boolean;
 }) {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("progress");
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
   const [isTimerEnabled, setIsTimerEnabled] = useState(false);
+  const [showIslandModal, setShowIslandModal] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("app-timer-enabled");
@@ -100,6 +103,29 @@ export default function DashboardClient({
             <FaFire className="text-danger" size={14} />
             <span style={{ fontWeight: "600", fontSize: "0.85rem" }}>{user.currentStreak} {t.profile?.days || "días"}</span>
           </div>
+          {isIslandExpert && (
+            <button
+              onClick={() => setShowIslandModal(true)}
+              title="Experto en Islas"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                background: "linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))",
+                color: "#F59E0B",
+                border: "1px solid #F59E0B",
+                padding: "0.4rem 0.75rem",
+                borderRadius: "var(--radius-full)",
+                fontSize: "0.85rem",
+                fontWeight: "800",
+                cursor: "pointer",
+                boxShadow: "0 2px 10px rgba(245, 158, 11, 0.3)"
+              }}
+            >
+              <span>🏴‍☠️</span>
+              <span>Experto en Islas</span>
+            </button>
+          )}
           <LogoutButton text={t.dashboard.logout} />
         </div>
       </header>
@@ -323,6 +349,34 @@ export default function DashboardClient({
         </>
       ) : (
         <LeaderboardTab currentUserId={user.id} />
+      )}
+
+      {/* Pirate Expert Badge Interactive Modal */}
+      {showIslandModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)", zIndex: 9999, display: "flex", justifyContent: "center", alignItems: "center", padding: "1rem" }}>
+          <div className="card animate-scale-up" style={{ maxWidth: "420px", width: "100%", padding: "2rem", textAlign: "center", border: "2px solid #F59E0B", boxShadow: "0 0 35px rgba(245, 158, 11, 0.4)", position: "relative" }}>
+            <button 
+              onClick={() => setShowIslandModal(false)}
+              style={{ position: "absolute", top: "12px", right: "12px", background: "none", border: "none", color: "var(--color-text-muted)", cursor: "pointer", fontSize: "1.2rem" }}
+            >
+              <FaTimes />
+            </button>
+            <div style={{ fontSize: "4rem", marginBottom: "0.5rem" }}>🏴‍☠️</div>
+            <h3 style={{ fontSize: "1.5rem", fontWeight: "800", color: "#F59E0B", marginBottom: "0.75rem" }}>
+              Cazatesoros de Islas
+            </h3>
+            <p style={{ fontSize: "1.05rem", fontWeight: "600", color: "var(--color-text)", lineHeight: "1.5", marginBottom: "1.5rem" }}>
+              ¡Esta persona es una experta cazatesoros en todas las islas del mundo! 🪙💎
+            </p>
+            <button 
+              onClick={() => setShowIslandModal(false)}
+              className="btn btn-primary"
+              style={{ background: "#F59E0B", color: "#000", fontWeight: "800", width: "100%" }}
+            >
+              ¡Entendido, Capitán! 🦜
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

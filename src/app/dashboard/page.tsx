@@ -26,10 +26,22 @@ export default async function DashboardPage() {
   }
 
   const totalCountries = await prisma.country.count() || 244;
-  const masteredCount = user.progress.filter(p => p.status === "Dominado").length;
-  const familiarCount = user.progress.filter(p => p.status === "Familiar").length;
-  const learningCount = user.progress.filter(p => p.status === "Aprendiendo").length;
+  const masteredCount = user.progress.filter(p => p.status === "Dominado" || p.status === "MASTERED").length;
+  const familiarCount = user.progress.filter(p => p.status === "Familiar" || p.status === "FAMILIAR").length;
+  const learningCount = user.progress.filter(p => p.status === "Aprendiendo" || p.status === "LEARNING").length;
   const unseenCount = Math.max(0, totalCountries - (masteredCount + familiarCount + learningCount));
+
+  // Check if ALL island countries in DB are at least "Familiar" or "Dominado"
+  const islandCountries = await prisma.country.findMany({
+    where: { continent: "Islas" },
+    select: { id: true }
+  });
+  const islandIds = islandCountries.map(c => c.id);
+  const userProgressMap = new Map(user.progress.map(p => [p.countryId, p.status]));
+  const isIslandExpert = islandIds.length > 0 && islandIds.every(id => {
+    const status = userProgressMap.get(id);
+    return status === "Familiar" || status === "Dominado" || status === "FAMILIAR" || status === "MASTERED";
+  });
 
   return (
     <DashboardClient 
@@ -39,6 +51,7 @@ export default async function DashboardPage() {
       familiarCount={familiarCount}
       learningCount={learningCount} 
       unseenCount={unseenCount}
+      isIslandExpert={isIslandExpert}
     />
   );
 }
