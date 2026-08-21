@@ -42,7 +42,12 @@ export default function TestIslasPage() {
             const left = Math.random() * 100;
             const delay = Math.random() * 2;
             const duration = 2.5 + Math.random() * 2.5;
-            const pirateEmoji = ["🏴‍☠️", "🪙", "💎", "🏝️", "🦜", "⛵", "⚓"][i % 7];
+            const pirateEmojis = [
+              "🪙", "🪙", "🪙", "🪙", "🪙", "🪙", "💰", "💰", "💰", "💰",
+              "💀", "☠️", "⚔️", "🧭", "🗺️", "👑", "🍺", "🐒", "🏝️", "🌊", "🏴‍☠️", "💎", "🦜",
+              "⛵", "⚓"
+            ];
+            const pirateEmoji = pirateEmojis[i % pirateEmojis.length];
             return (
               <div 
                 key={i}
