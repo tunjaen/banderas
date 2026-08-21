@@ -157,7 +157,8 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       sessionStorage.setItem("lastSession", JSON.stringify({
         total: questionCount,
         correct: correctCount,
-        xp: sessionXp
+        xp: sessionXp,
+        continent: continent || "Mundo"
       }));
       router.push("/learn/summary");
       return;
@@ -266,7 +267,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       { id: "América del Norte", name: "América del Norte", nameEn: "North America", icon: "🌎" },
       { id: "América del Sur", name: "América del Sur", nameEn: "South America", icon: "🌎" },
       { id: "Oceanía", name: "Oceanía", nameEn: "Oceania", icon: "🌏" },
-      { id: "Islas", name: "Islas", nameEn: "Islands", icon: "🏝️", color: "rgba(14, 165, 233, 0.12)", border: "rgba(14, 165, 233, 0.5)" },
+      { id: "Islas", name: "Islas", nameEn: "Islands", icon: "🏝️", subtitle: "Cazatesoros", subtitleEn: "Treasure Hunter", topRightIcon: "🏴‍☠️", color: "rgba(14, 165, 233, 0.12)", border: "rgba(14, 165, 233, 0.5)" },
     ];
 
     return (
@@ -287,6 +288,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                 onClick={() => router.push(`/learn/${mode}?continent=${encodeURIComponent(c.id)}`)}
                 className="card hover-scale"
                 style={{
+                  position: "relative",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -300,11 +302,21 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                   border: `1px solid ${c.border || "rgba(255,255,255,0.1)"}`,
                   background: c.color || "var(--color-surface)",
                   borderRadius: "var(--radius-md)",
-                  gap: "0.5rem"
+                  gap: "0.35rem"
                 }}
               >
+                {c.topRightIcon && (
+                  <span style={{ position: "absolute", top: "6px", right: "6px", fontSize: "1.1rem" }}>
+                    {c.topRightIcon}
+                  </span>
+                )}
                 <span style={{ fontSize: "2rem" }}>{c.icon}</span>
                 <span style={{ wordBreak: "break-word", lineHeight: "1.2" }}>{label}</span>
+                {c.subtitle && (
+                  <span style={{ fontSize: "0.75rem", color: "var(--color-warning)", fontWeight: "800", marginTop: "-0.1rem" }}>
+                    {lang === 'en' ? c.subtitleEn : c.subtitle}
+                  </span>
+                )}
               </button>
             );
           })}

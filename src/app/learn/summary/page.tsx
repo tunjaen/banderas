@@ -54,40 +54,69 @@ export default function SummaryPage() {
 
   const accuracy = Math.round((stats.correct / stats.total) * 100) || 0;
   const isPerfect = stats.correct === stats.total && stats.total > 0;
+  const isIslas = stats.continent === "Islas";
 
   return (
     <div className="container flex-center animate-fade-in" style={{ minHeight: "80vh", position: "relative" }}>
       
-      {/* Visual Canvas Confetti Effect for 10/10 */}
+      {/* Visual Confetti / Pirate Emoji Rain Effect for 10/10 */}
       {showConfetti && (
         <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 99, overflow: "hidden" }}>
-          {Array.from({ length: 50 }).map((_, i) => {
-            const left = Math.random() * 100;
-            const delay = Math.random() * 3;
-            const duration = 2 + Math.random() * 3;
-            const bg = ["#F59E0B", "#10B981", "#3B82F6", "#EF4444", "#A855F7"][i % 5];
-            return (
-              <div 
-                key={i}
-                style={{
-                  position: "absolute",
-                  top: "-20px",
-                  left: `${left}%`,
-                  width: "10px",
-                  height: "14px",
-                  background: bg,
-                  borderRadius: "2px",
-                  opacity: 0.9,
-                  transform: `rotate(${Math.random() * 360}deg)`,
-                  animation: `confetti-fall ${duration}s linear ${delay}s infinite`
-                }}
-              />
-            );
-          })}
+          {isIslas ? (
+            Array.from({ length: 45 }).map((_, i) => {
+              const left = Math.random() * 100;
+              const delay = Math.random() * 2.5;
+              const duration = 2.5 + Math.random() * 2.5;
+              const pirateEmoji = ["🏴‍☠️", "🪙", "💎", "🏝️", "🦜", "⛵", "⚓"][i % 7];
+              return (
+                <div 
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    top: "-40px",
+                    left: `${left}%`,
+                    fontSize: `${1.5 + Math.random() * 1.5}rem`,
+                    opacity: 0.95,
+                    animation: `pirate-rain ${duration}s linear ${delay}s infinite`
+                  }}
+                >
+                  {pirateEmoji}
+                </div>
+              );
+            })
+          ) : (
+            Array.from({ length: 50 }).map((_, i) => {
+              const left = Math.random() * 100;
+              const delay = Math.random() * 3;
+              const duration = 2 + Math.random() * 3;
+              const bg = ["#F59E0B", "#10B981", "#3B82F6", "#EF4444", "#A855F7"][i % 5];
+              return (
+                <div 
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    top: "-20px",
+                    left: `${left}%`,
+                    width: "10px",
+                    height: "14px",
+                    background: bg,
+                    borderRadius: "2px",
+                    opacity: 0.9,
+                    transform: `rotate(${Math.random() * 360}deg)`,
+                    animation: `confetti-fall ${duration}s linear ${delay}s infinite`
+                  }}
+                />
+              );
+            })
+          )}
           <style jsx>{`
             @keyframes confetti-fall {
               0% { transform: translateY(0) rotate(0deg); opacity: 1; }
               100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+            }
+            @keyframes pirate-rain {
+              0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+              100% { transform: translateY(105vh) rotate(360deg); opacity: 0.2; }
             }
           `}</style>
         </div>
