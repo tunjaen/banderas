@@ -20,86 +20,97 @@ interface Question {
   options: { id: string; name: string; nameEn: string; isoCode: string }[];
 }
 
-function AnimatedFlameIcon({ size = 18 }: { size?: number }) {
+function AnimatedFlameIcon({ size = 52 }: { size?: number }) {
   return (
     <svg 
       width={size} 
-      height={size} 
-      viewBox="0 0 50 65" 
+      height={Math.round(size * 1.3)} 
+      viewBox="0 0 100 130" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
       style={{ overflow: "visible" }}
     >
       <defs>
-        <linearGradient id="flameGradOuter" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#D97706" />
-          <stop offset="50%" stopColor="#EF4444" />
-          <stop offset="100%" stopColor="#F59E0B" />
-        </linearGradient>
-        <linearGradient id="flameGradMid" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#F59E0B" />
-          <stop offset="100%" stopColor="#FBBF24" />
-        </linearGradient>
-        <linearGradient id="flameGradCore" x1="0%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#FDE047" />
-          <stop offset="100%" stopColor="#FFFFFF" />
-        </linearGradient>
         <style>{`
-          @keyframes flameWave1 {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.1, 0.93) rotate(-4deg); }
+          @keyframes steveFlameBase {
+            0%, 100% { transform: scale(1, 1) rotate(0deg); }
+            25% { transform: scale(1.08, 0.92) rotate(-4deg); }
+            50% { transform: scale(0.92, 1.12) rotate(4deg); }
+            75% { transform: scale(1.04, 0.96) rotate(-2deg); }
           }
-          @keyframes flameWave2 {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(0.9, 1.12) rotate(5deg); }
+          @keyframes steveFlameMid {
+            0%, 100% { transform: scale(1, 1) rotate(0deg); }
+            33% { transform: scale(0.9, 1.15) rotate(5deg); }
+            66% { transform: scale(1.12, 0.88) rotate(-5deg); }
           }
-          @keyframes flameSpark {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-18px) scale(0.2); opacity: 0; }
+          @keyframes steveFlameInner {
+            0%, 100% { transform: scale(1, 1) translateY(0); }
+            50% { transform: scale(1.15, 0.9) translateY(-2px); }
           }
-          .flame-layer-back {
-            animation: flameWave1 1.1s infinite ease-in-out;
-            transform-origin: bottom center;
+          @keyframes steveEmber1 {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+            50% { transform: translate(-8px, -28px) scale(0.8); opacity: 0.8; }
+            100% { transform: translate(-18px, -60px) scale(0.2); opacity: 0; }
           }
-          .flame-layer-front {
-            animation: flameWave2 0.75s infinite ease-in-out;
-            transform-origin: bottom center;
+          @keyframes steveEmber2 {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.95; }
+            50% { transform: translate(12px, -32px) scale(0.7); opacity: 0.85; }
+            100% { transform: translate(22px, -65px) scale(0.1); opacity: 0; }
           }
-          .flame-spark-1 {
-            animation: flameSpark 1s infinite ease-out;
-            transform-origin: center;
+          @keyframes steveEmber3 {
+            0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
+            30% { transform: translate(4px, -15px) scale(1.1); opacity: 0.9; }
+            100% { transform: translate(-6px, -55px) scale(0.15); opacity: 0; }
           }
-          .flame-spark-2 {
-            animation: flameSpark 0.85s infinite ease-out 0.35s;
-            transform-origin: center;
-          }
+          .steve-flame-1 { animation: steveFlameBase 1.2s infinite ease-in-out; transform-origin: 50px 110px; }
+          .steve-flame-2 { animation: steveFlameMid 0.85s infinite ease-in-out; transform-origin: 50px 110px; }
+          .steve-flame-3 { animation: steveFlameInner 0.6s infinite ease-in-out; transform-origin: 50px 110px; }
+          .steve-ember-1 { animation: steveEmber1 1.3s infinite ease-out; transform-origin: center; }
+          .steve-ember-2 { animation: steveEmber2 1.1s infinite ease-out 0.4s; transform-origin: center; }
+          .steve-ember-3 { animation: steveEmber3 0.95s infinite ease-out 0.2s; transform-origin: center; }
         `}</style>
+
+        <radialGradient id="steveGlow" cx="50%" cy="80%" r="50%">
+          <stop offset="0%" stopColor="#FE8200" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#E23B00" stopOpacity="0" />
+        </radialGradient>
       </defs>
 
-      {/* Outer Flame Layer */}
+      {/* Ambient Glow */}
+      <ellipse cx="50" cy="95" rx="35" ry="20" fill="url(#steveGlow)" />
+
+      {/* 1. Deep Red Flame Base (#E23B00) */}
       <path 
-        className="flame-layer-back"
-        d="M25 2 C25 2, 38 18, 38 32 C38 46, 32 58, 25 58 C18 58, 12 46, 12 32 C12 18, 25 2, 25 2 Z" 
-        fill="url(#flameGradOuter)"
+        className="steve-flame-1"
+        d="M50 10 C50 10 78 40 78 70 C78 95 65 110 50 110 C35 110 22 95 22 70 C22 40 50 10 50 10 Z" 
+        fill="#E23B00"
       />
 
-      {/* Middle Flame Layer */}
+      {/* 2. Bright Orange Mid Flame (#FE8200) */}
       <path 
-        className="flame-layer-front"
-        d="M25 14 C25 14, 34 26, 34 36 C34 46, 30 54, 25 54 C20 54, 16 46, 16 36 C16 26, 25 14, 25 14 Z" 
-        fill="url(#flameGradMid)"
+        className="steve-flame-2"
+        d="M50 25 C50 25 70 50 70 75 C70 96 61 106 50 106 C39 106 30 96 30 75 C30 50 50 25 50 25 Z" 
+        fill="#FE8200"
       />
 
-      {/* Core Hot Flame Layer */}
+      {/* 3. Yellow Inner Flame (#FBE416) */}
       <path 
-        className="flame-layer-back"
-        d="M25 28 C25 28, 30 35, 30 42 C30 48, 28 52, 25 52 C22 52, 20 48, 20 42 C20 35, 25 28, 25 28 Z" 
-        fill="url(#flameGradCore)"
+        className="steve-flame-3"
+        d="M50 42 C50 42 62 62 62 82 C62 98 57 102 50 102 C43 102 38 98 38 82 C38 62 50 42 50 42 Z" 
+        fill="#FBE416"
       />
 
-      {/* Rising Sparks */}
-      <circle className="flame-spark-1" cx="21" cy="12" r="2.5" fill="#FEF08A" />
-      <circle className="flame-spark-2" cx="29" cy="8" r="2" fill="#FDE047" />
+      {/* 4. White/Light Core (#FDFDB4) */}
+      <path 
+        className="steve-flame-2"
+        d="M50 58 C50 58 56 72 56 86 C56 96 53 99 50 99 C47 99 44 96 44 86 C44 72 50 58 50 58 Z" 
+        fill="#FDFDB4"
+      />
+
+      {/* Floating Ember Particles (#FE9C00, #FEA600, #E27100) */}
+      <circle className="steve-ember-1" cx="44" cy="35" r="3.5" fill="#FE9C00" />
+      <circle className="steve-ember-2" cx="58" cy="28" r="3" fill="#FEA600" />
+      <circle className="steve-ember-3" cx="50" cy="20" r="2.5" fill="#E27100" />
     </svg>
   );
 }
@@ -382,12 +393,12 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           {isMastered && (
             <div style={{ 
               position: "absolute", 
-              top: "-18px", 
-              right: "-14px", 
+              top: "-28px", 
+              right: "-18px", 
               zIndex: 10,
-              filter: "drop-shadow(0 4px 10px rgba(239,68,68,0.7))"
+              filter: "drop-shadow(0 6px 14px rgba(226,59,0,0.75))"
             }}>
-              <AnimatedFlameIcon size={38} />
+              <AnimatedFlameIcon size={54} />
             </div>
           )}
 
