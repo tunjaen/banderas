@@ -87,6 +87,8 @@ export async function POST(req: Request) {
       }
     }));
 
+    let xpGained = 0;
+
     // Update Gamification for User
     if (user) {
       let { xp, currentStreak, longestStreak, lastPlayedAt, level, flagCorrect, flagWrong, spatialCorrect, spatialWrong } = user;
@@ -109,7 +111,6 @@ export async function POST(req: Request) {
 
       // Add XP according to mastery status & mode
       const wasDominado = progress?.status === "Dominado";
-      let xpGained = 0;
 
       if (isCorrect) {
         if (wasDominado) {

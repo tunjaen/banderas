@@ -365,10 +365,10 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                   {feedback.isTimeout ? "¡Tiempo agotado!" : feedback.isCorrect ? t.quiz.correct : t.quiz.incorrect}
                 </h3>
                 <p style={{ fontSize: "1.25rem", color: "var(--color-text)", margin: "0.5rem 0" }}>
-                  <strong>{lang === 'en' ? feedback.country.nameEn : feedback.country.name}</strong>
+                  <strong>{lang === 'en' ? (feedback.country?.nameEn || question.countryNameEn) : (feedback.country?.name || question.countryName)}</strong>
                 </p>
-                <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.capital} {lang === 'en' ? feedback.country.capitalEn : feedback.country.capital}</p>
-                <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.continent} {lang === 'en' ? feedback.country.continentEn : feedback.country.continent}</p>
+                <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.capital} {lang === 'en' ? (feedback.country?.capitalEn || "") : (feedback.country?.capital || "")}</p>
+                <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.continent} {lang === 'en' ? (feedback.country?.continentEn || "") : (feedback.country?.continent || "")}</p>
                 
                 {feedback.xpGained > 0 ? (
                   <p className="text-muted font-bold mt-2" style={{ color: "var(--color-warning)", margin: "0.4rem 0 0" }}>+{feedback.xpGained} XP</p>
@@ -376,7 +376,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                   <p className="text-muted font-bold mt-2" style={{ color: "var(--color-text-muted)", margin: "0.4rem 0 0" }}>0 XP (Bandera Dominada)</p>
                 )}
 
-                {["SJM", "PRI", "GRL", "MAC", "PYF", "NCL", "GUF", "HKG", "BMU", "CYM"].includes(feedback.country.id) && (
+                {feedback.country?.id && ["SJM", "PRI", "GRL", "MAC", "PYF", "NCL", "GUF", "HKG", "BMU", "CYM"].includes(feedback.country.id) && (
                   <div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "rgba(245, 158, 11, 0.1)", borderLeft: "3px solid var(--color-warning)", borderRadius: "0 var(--radius-sm) var(--radius-sm) 0" }}>
                     <p style={{ color: "var(--color-warning)", fontSize: "0.875rem", margin: 0, fontWeight: "600" }}>
                       {lang === 'en' 
@@ -402,11 +402,11 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
             {mode === "spatial" ? (
               <div style={{ width: "200px", height: "140px", borderRadius: "var(--radius-md)", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`https://flagcdn.com/w320/${feedback.country.isoCode.toLowerCase()}.png`} alt="Flag" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-md)" }} />
+                <img src={`https://flagcdn.com/w320/${(feedback.country?.isoCode || question.flagCode).toLowerCase()}.png`} alt="Flag" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-md)" }} />
               </div>
             ) : (
               <div style={{ width: "280px", height: "140px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "2px solid rgba(255,255,255,0.1)" }}>
-                 <Map lat={feedback.country.lat} lng={feedback.country.lng} name={lang === 'en' ? feedback.country.nameEn : feedback.country.name} />
+                 <Map lat={feedback.country?.lat || question.lat} lng={feedback.country?.lng || question.lng} name={lang === 'en' ? (feedback.country?.nameEn || question.countryNameEn) : (feedback.country?.name || question.countryName)} />
               </div>
             )}
 
