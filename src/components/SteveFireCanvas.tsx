@@ -49,42 +49,26 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
 
     const spawnFireBlob = () => {
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const maxLife = 30 + Math.random() * 22;
+      const maxLife = 24 + Math.random() * 18;
       fireBlobs.push({
-        x: centerX + (Math.random() * (width * 0.28) - width * 0.14),
+        x: centerX + (Math.random() * (width * 0.2) - width * 0.1),
         y: baseY,
-        vx: (Math.random() * 0.6 - 0.3),
-        vy: -(1.6 + Math.random() * 1.5),
-        size: width * 0.48 + Math.random() * (width * 0.2),
+        vx: (Math.random() * 0.8 - 0.4),
+        vy: -(1.8 + Math.random() * 1.6),
+        size: width * 0.35 + Math.random() * (width * 0.15),
         color,
         life: 0,
         maxLife,
       });
 
-      // Spawn cutout mask to carve shape dynamically on outer edges
-      if (Math.random() > 0.38) {
-        const side = Math.random() > 0.5 ? 1 : -1;
-        fireBlobs.push({
-          x: centerX + side * (width * 0.34 + Math.random() * (width * 0.12)),
-          y: baseY - 5,
-          vx: side * (0.4 + Math.random() * 0.5),
-          vy: -(1.4 + Math.random() * 1.2),
-          size: width * 0.32 + Math.random() * (width * 0.1),
-          color: "#000000",
-          life: 0,
-          maxLife: 22 + Math.random() * 14,
-          isCutout: true
-        });
-      }
-
       // Spawn rising embers
-      if (Math.random() > 0.35) {
+      if (Math.random() > 0.3) {
         embers.push({
-          x: centerX + (Math.random() * (width * 0.5) - width * 0.25),
+          x: centerX + (Math.random() * (width * 0.4) - width * 0.2),
           y: baseY - 10,
-          vx: (Math.random() * 1.4 - 0.7),
-          vy: -(2.2 + Math.random() * 2.2),
-          size: 1.8 + Math.random() * 2.2,
+          vx: (Math.random() * 1.6 - 0.8),
+          vy: -(2.5 + Math.random() * 2.2),
+          size: 1.5 + Math.random() * 2,
           color: emberColors[Math.floor(Math.random() * emberColors.length)],
           alpha: 1
         });
@@ -95,32 +79,31 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
       ctx.clearRect(0, 0, width, height);
 
       // Maintain particle density
-      if (fireBlobs.length < 80) {
+      if (fireBlobs.length < 60) {
         spawnFireBlob();
         spawnFireBlob();
       }
 
       // 1. Ambient Radial Glow
       ctx.globalCompositeOperation = "source-over";
-      const glowGrad = ctx.createRadialGradient(centerX, baseY, 0, centerX, baseY, width * 0.75);
-      glowGrad.addColorStop(0, "rgba(254, 130, 0, 0.55)");
+      const glowGrad = ctx.createRadialGradient(centerX, baseY, 0, centerX, baseY, width * 0.6);
+      glowGrad.addColorStop(0, "rgba(254, 130, 0, 0.5)");
       glowGrad.addColorStop(1, "rgba(226, 59, 0, 0)");
       ctx.fillStyle = glowGrad;
       ctx.beginPath();
-      ctx.arc(centerX, baseY, width * 0.75, 0, Math.PI * 2);
+      ctx.arc(centerX, baseY, width * 0.6, 0, Math.PI * 2);
       ctx.fill();
 
-      // 2. Render Additive Glowing Flame Blobs
+      // 2. Render Additive Glowing Flame Blobs (Continuous Solid Flame)
       ctx.globalCompositeOperation = "screen";
       for (let i = fireBlobs.length - 1; i >= 0; i--) {
         const p = fireBlobs[i];
-        if (p.isCutout) continue;
 
         p.life++;
         p.x += p.vx;
         p.y += p.vy;
         const progress = p.life / p.maxLife;
-        const currentSize = p.size * (1 - progress * 0.6);
+        const currentSize = p.size * (1 - progress * 0.65);
         const alpha = 0.85 * (1 - progress);
 
         if (p.life >= p.maxLife || currentSize <= 0) {
@@ -131,30 +114,6 @@ export default function SteveFireCanvas({ size = 64 }: { size?: number }) {
         ctx.beginPath();
         ctx.fillStyle = p.color;
         ctx.globalAlpha = Math.max(0, alpha);
-        ctx.arc(p.x, p.y, Math.max(0.1, currentSize), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // 3. Render Subtractive Cutouts (carving organic flame shapes)
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.globalAlpha = 1;
-      for (let i = fireBlobs.length - 1; i >= 0; i--) {
-        const p = fireBlobs[i];
-        if (!p.isCutout) continue;
-
-        p.life++;
-        p.x += p.vx;
-        p.y += p.vy;
-        const progress = p.life / p.maxLife;
-        const currentSize = p.size * (1 + progress * 0.4);
-
-        if (p.life >= p.maxLife) {
-          fireBlobs.splice(i, 1);
-          continue;
-        }
-
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(0,0,0,1)";
         ctx.arc(p.x, p.y, Math.max(0.1, currentSize), 0, Math.PI * 2);
         ctx.fill();
       }
