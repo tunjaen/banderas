@@ -394,7 +394,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           {isMastered && (
             <div style={{ 
               position: "absolute", 
-              top: "-45px", 
+              top: "-60px", 
               right: "-30px", 
               zIndex: 10,
               filter: "drop-shadow(0 6px 14px rgba(226,59,0,0.75))"
