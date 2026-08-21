@@ -397,9 +397,9 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
               top: "-42px", 
               right: "-24px", 
               zIndex: 10,
-              filter: "drop-shadow(0 6px 14px rgba(226,59,0,0.75))"
+              pointerEvents: "none"
             }}>
-              <SteveFireCanvas size={80} />
+              <SteveFireCanvas size={110} />
             </div>
           )}
 

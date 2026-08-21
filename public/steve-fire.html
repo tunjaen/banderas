@@ -174,7 +174,7 @@
         this.onResize = function () {
           this.app.renderer.resize(window.innerWidth, window.innerHeight);
           this.stage.position.x = window.innerWidth / 2;
-          this.stage.position.y = window.innerHeight * 0.82;
+          this.stage.position.y = window.innerHeight * 0.88;
         };
         this.add = function (element, container = this.stage) {
           container.addChild(element);
@@ -188,7 +188,7 @@
         this.flamesContainer = new PIXI.Container();
         this.add(this.stage, this.app.stage);
         this.add(this.flamesContainer);
-        this.flamesContainer.scale.set(0.75);
+        this.flamesContainer.scale.set(0.42);
         let flames = [
           { color: 0xE23B00, scale: 1, offset: -30 },
           { color: 0xFE8200, scale: 1, offset: -10 },
