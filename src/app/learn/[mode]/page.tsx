@@ -6,6 +6,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { FaTimes, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaClock, FaFire, FaStopwatch } from "react-icons/fa";
 import { useLanguage } from "@/lib/LanguageContext";
+import SteveFireCanvas from "@/components/SteveFireCanvas";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
@@ -393,12 +394,12 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           {isMastered && (
             <div style={{ 
               position: "absolute", 
-              top: "-28px", 
-              right: "-18px", 
+              top: "-34px", 
+              right: "-22px", 
               zIndex: 10,
               filter: "drop-shadow(0 6px 14px rgba(226,59,0,0.75))"
             }}>
-              <AnimatedFlameIcon size={54} />
+              <SteveFireCanvas size={68} />
             </div>
           )}
 
