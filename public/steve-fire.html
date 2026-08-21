@@ -99,8 +99,8 @@
         this.fire = new PIXI.Container();
         this.flame.addChild(this.fire);
         this.flame.addChild(this.cutout);
-        this.cutout.blendMode = PIXI.BLEND_MODES.ERASE || PIXI.BLEND_MODES.DST_OUT;
-        this.fire.alpha = 0.7;
+        this.fire.alpha = 0.85;
+        this.fire.blendMode = PIXI.BLEND_MODES.ADD;
         var circle = new PIXI.Graphics();
         circle.lineStyle(0);
         circle.beginFill(color, 1);
@@ -113,13 +113,6 @@
         cutoutCircle.drawCircle(0, 0, 40);
         cutoutCircle.endFill();
         this.cutoutBlob = app.renderer.generateTexture(cutoutCircle);
-        let filters = {
-          bloom: new PIXI.filters.AdvancedBloomFilter(0.45, 0.5, 0.5),
-          pixel: pixelate ? new PIXI.filters.PixelateFilter() : new PIXI.filters.VoidFilter(),
-          void: new PIXI.filters.VoidFilter()
-        };
-        this.flame.filters = [filters.bloom, filters.pixel, filters.void];
-        this.flame.filters[this.flame.filters.length - 1].blendMode = PIXI.BLEND_MODES.SCREEN;
         setInterval(() => {
           this.addFlame();
           this.addCutout(Math.random() > .5 ? true : false);
@@ -133,7 +126,6 @@
       addCutout(left) {
         let time = this.time * (0.7 + (Math.random() * 0.2));
         let blob = this.makeBlob(this.cutoutBlob);
-        blob.blendMode = PIXI.BLEND_MODES.ERASE || PIXI.BLEND_MODES.DST_OUT;
         this.cutout.addChild(blob);
         let scale = [1, 0.75 + (Math.random() * 1)];
         blob.position.x = (130 + (Math.random() * 50)) * (left ? -1 : 1);
@@ -147,6 +139,7 @@
       addFlame() {
         let time = this.time;
         let blob = this.makeBlob(this.fireBlob);
+        blob.blendMode = PIXI.BLEND_MODES.ADD;
         this.fire.addChild(blob);
         let scale = [1.2 + Math.random(), 0.5 + Math.random()];
         let bezier = [
