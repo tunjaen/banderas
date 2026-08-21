@@ -381,14 +381,13 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           {/* Flaming Flag Badge for Mastered Countries */}
           {isMastered && (
             <div style={{ 
-              position: "absolute", top: "-14px", right: "-10px", 
-              background: "linear-gradient(135deg, #F59E0B, #EF4444)", 
-              color: "#FFF", padding: "0.25rem 0.65rem", borderRadius: "12px", 
-              fontSize: "0.75rem", fontWeight: "800", 
-              boxShadow: "0 4px 12px rgba(239,68,68,0.6)", zIndex: 10,
-              display: "flex", alignItems: "center", gap: "0.35rem"
+              position: "absolute", 
+              top: "-18px", 
+              right: "-14px", 
+              zIndex: 10,
+              filter: "drop-shadow(0 4px 10px rgba(239,68,68,0.7))"
             }}>
-              <AnimatedFlameIcon size={16} /> Dominado
+              <AnimatedFlameIcon size={38} />
             </div>
           )}
 
