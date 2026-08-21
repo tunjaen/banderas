@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { FaTimes, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaClock, FaFire } from "react-icons/fa";
+import { FaTimes, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaClock, FaFire, FaStopwatch } from "react-icons/fa";
 import { useLanguage } from "@/lib/LanguageContext";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -40,8 +40,21 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   const [sessionXp, setSessionXp] = useState(0);
   const [sessionHistory, setSessionHistory] = useState<string[]>([]);
 
-  // 10-Second Countdown Timer
+  // 10-Second Countdown Timer & Nav Toggle
+  const [isTimerEnabled, setIsTimerEnabled] = useState(false);
   const [timeLeft, setTimeLeft] = useState(10);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("app-timer-enabled");
+    if (saved === "true") setIsTimerEnabled(true);
+  }, []);
+
+  const toggleTimer = () => {
+    const next = !isTimerEnabled;
+    setIsTimerEnabled(next);
+    localStorage.setItem("app-timer-enabled", String(next));
+  };
 
   const fetchQuestion = async () => {
     if (questionCount >= 10) {
@@ -58,6 +71,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
     setFeedback(null);
     setFunFact(null);
     setSelectedId(null);
+    setIsSubmitting(false);
     setTimeLeft(10);
 
     try {
@@ -87,9 +101,9 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
     fetchQuestion();
   }, [mode, continent]);
 
-  // Timer interval effect
+  // Timer interval effect (blocked immediately if timer disabled, feedback active, or answer submitting)
   useEffect(() => {
-    if (loading || !question || feedback) return;
+    if (!isTimerEnabled || loading || !question || feedback || selectedId !== null || isSubmitting) return;
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -103,11 +117,12 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [loading, question, feedback]);
+  }, [isTimerEnabled, loading, question, feedback, selectedId, isSubmitting]);
 
   const handleSelect = async (id: string) => {
-    if (selectedId || !question) return;
+    if (selectedId || isSubmitting || !question) return;
     setSelectedId(id);
+    setIsSubmitting(true);
     
     const isTimeout = id === "TIMEOUT_FAILED";
     const isCorrect = !isTimeout && id === question.targetId;
@@ -231,11 +246,28 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           <div style={{ width: `${(questionCount / 10) * 100}%`, height: "100%", background: "var(--color-primary)", borderRadius: "var(--radius-full)", transition: "width 0.3s ease-in-out" }}></div>
         </div>
 
-        {/* 10-Second Countdown Timer Badge */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.95rem", fontWeight: "800", color: timeLeft <= 3 ? "#EF4444" : "#F59E0B", background: "rgba(255,255,255,0.06)", padding: "0.3rem 0.75rem", borderRadius: "20px", border: `1px solid ${timeLeft <= 3 ? "rgba(239,68,68,0.4)" : "rgba(245,158,11,0.3)"}` }}>
-          <FaClock size={14} className={timeLeft <= 3 ? "animate-pulse" : ""} />
-          <span>{timeLeft}s</span>
-        </div>
+        {/* Countdown Timer Toggle Button */}
+        <button
+          onClick={toggleTimer}
+          title={isTimerEnabled ? (t.dashboard.timerOn || "Temporizador Activado (10s)") : (t.dashboard.timerOff || "Temporizador Desactivado")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            fontSize: "0.95rem",
+            fontWeight: "800",
+            color: isTimerEnabled ? (timeLeft <= 3 ? "#EF4444" : "#F59E0B") : "var(--color-text-muted)",
+            background: isTimerEnabled ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.06)",
+            padding: "0.3rem 0.75rem",
+            borderRadius: "20px",
+            border: `1px solid ${isTimerEnabled ? (timeLeft <= 3 ? "rgba(239,68,68,0.4)" : "rgba(245,158,11,0.3)") : "rgba(255,255,255,0.08)"}`,
+            cursor: "pointer",
+            transition: "all 0.2s"
+          }}
+        >
+          <FaStopwatch size={14} style={{ opacity: isTimerEnabled ? 1 : 0.4 }} className={isTimerEnabled && timeLeft <= 3 ? "animate-pulse" : ""} />
+          <span>{isTimerEnabled ? `${timeLeft}s` : "OFF"}</span>
+        </button>
       </header>
 
       <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>

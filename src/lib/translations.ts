@@ -27,6 +27,8 @@ export const translations = {
         progress: "Mi Progreso",
         ranking: "Ranking Global"
       },
+      timerOn: "Temporizador Activado (10s)",
+      timerOff: "Temporizador Desactivado",
       logout: "Cerrar sesión"
     },
     leaderboard: {
@@ -140,6 +142,8 @@ export const translations = {
         progress: "My Progress",
         ranking: "Global Ranking"
       },
+      timerOn: "Timer ON (10s)",
+      timerOff: "Timer OFF",
       logout: "Log out"
     },
     leaderboard: {

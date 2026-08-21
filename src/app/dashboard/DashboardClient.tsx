@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaFire, FaStar, FaGlobe, FaTrophy, FaMapMarkerAlt, FaChartBar, FaMedal, FaBolt, FaCheckCircle, FaBookOpen, FaQuestionCircle, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaFire, FaStar, FaGlobe, FaTrophy, FaMapMarkerAlt, FaChartBar, FaMedal, FaBolt, FaCheckCircle, FaBookOpen, FaQuestionCircle, FaChevronDown, FaChevronUp, FaStopwatch } from "react-icons/fa";
 import LogoutButton from "./LogoutButton";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -26,6 +26,18 @@ export default function DashboardClient({
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("progress");
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
+  const [isTimerEnabled, setIsTimerEnabled] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("app-timer-enabled");
+    if (saved === "true") setIsTimerEnabled(true);
+  }, []);
+
+  const toggleTimer = () => {
+    const next = !isTimerEnabled;
+    setIsTimerEnabled(next);
+    localStorage.setItem("app-timer-enabled", String(next));
+  };
 
   // XP & Level calculations
   const lvl = user.level || 1;
@@ -62,6 +74,27 @@ export default function DashboardClient({
         </div>
         
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={toggleTimer}
+            title={isTimerEnabled ? (t.dashboard.timerOn || "Temporizador Activado (10s)") : (t.dashboard.timerOff || "Temporizador Desactivado")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              background: isTimerEnabled ? "rgba(245, 158, 11, 0.15)" : "var(--color-surface)",
+              color: isTimerEnabled ? "#F59E0B" : "var(--color-text-muted)",
+              border: `1px solid ${isTimerEnabled ? "rgba(245, 158, 11, 0.4)" : "rgba(255,255,255,0.05)"}`,
+              padding: "0.4rem 0.75rem",
+              borderRadius: "var(--radius-full)",
+              fontSize: "0.85rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            <FaStopwatch size={14} style={{ opacity: isTimerEnabled ? 1 : 0.4 }} />
+            <span>{isTimerEnabled ? "10s" : "OFF"}</span>
+          </button>
           <LanguageSelector />
           <div className="flex gap-2 items-center" style={{ background: "var(--color-surface)", padding: "0.4rem 0.75rem", borderRadius: "var(--radius-full)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <FaFire className="text-danger" size={14} />
