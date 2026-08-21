@@ -99,6 +99,7 @@
         this.fire = new PIXI.Container();
         this.flame.addChild(this.fire);
         this.flame.addChild(this.cutout);
+        this.cutout.blendMode = PIXI.BLEND_MODES.ERASE || PIXI.BLEND_MODES.DST_OUT;
         this.fire.alpha = 0.7;
         var circle = new PIXI.Graphics();
         circle.lineStyle(0);
@@ -132,6 +133,7 @@
       addCutout(left) {
         let time = this.time * (0.7 + (Math.random() * 0.2));
         let blob = this.makeBlob(this.cutoutBlob);
+        blob.blendMode = PIXI.BLEND_MODES.ERASE || PIXI.BLEND_MODES.DST_OUT;
         this.cutout.addChild(blob);
         let scale = [1, 0.75 + (Math.random() * 1)];
         blob.position.x = (130 + (Math.random() * 50)) * (left ? -1 : 1);
