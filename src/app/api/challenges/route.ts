@@ -3,6 +3,26 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+const ISLAND_COUNTRIES = ["ABW","ASM","ATG","AUS","BHS","SHN","BMU","BRB","CCK","COK","COM","CPV","CUB","CUW","CXR","CYM","CYP","DMA","DOM","FJI","FLK","FSM","GBR","GGY","GLP","GRL","GUM","HTI","IDN","IMN","IOT","IRL","ISL","JAM","JEY","JPN","KIR","KNA","LCA","LKA","MDG","MDV","MHL","MLT","MNP","MSR","MTQ","MUS","MYT","NCL","NIU","NRU","NZL","PCN","PHL","PNG","PRI","PYF","REU","SGP","SLB","SPM","STP","SXM","SYC","TKL","TLS","TON","TTO","TUV","TWN","VGB","VIR","VUT","WLF","WSM"];
+
+const SUBREGIONS: Record<string, string[]> = {
+  Africa_NorthWest: ["EGY","DZA","MAR","TUN","LBY","SDN","ESH", "NGA","GHA","SEN","CIV","MLI","NER","BFAS","GIN","BEN","TGO","GMB","GNB","SLE","LBR","CPV","MRT"],
+  Africa_East: ["ETH","KEN","TZA","UGA","RWA","BDI","SOM","DJI","ERI","SSD","MOZ","MDG","MWI","ZMB","ZWE","MUS","SYC","COM","MYT","REU"],
+  Africa_CentralSouth: ["ZAF","AGO","CMR","COD","COG","GAB","GNQ","STP","NAM","BWA","LSO","SWZ","CAF","TCD"],
+  
+  Europe_WestNorth: ["FRA","DEU","NLD","BEL","CHE","AUT","LUX","MCO","LIE", "GBR","IRL","SWE","NOR","FIN","DNK","ISL","EST","LVA","LTU","FRO","ALA"],
+  Europe_South: ["ESP","PRT","ITA","GRC","HRV","SVN","BIH","SRB","MNE","MKD","ALB","MLT","CYP","AND","SMR","VAT","GIB"],
+  Europe_East: ["POL","CZE","SVK","HUN","ROU","BGR","UKR","BLR","MDA","RUS","LTU","LVA"],
+
+  Asia_EastSE: ["CHN","JPN","KOR","PRK","TWN","HKG","MAC", "IDN","PHL","VNM","THA","MYS","SGP","MMR","KHM","LAO","BRN","TLS"],
+  Asia_SouthCentral: ["IND","PAK","BGD","LKA","NPL","AFG","BTN","MDV", "KAZ","UZB","TKM","KGZ","TJK"],
+  Asia_MiddleEast: ["TUR","SAU","IRN","IRQ","ARE","ISR","PSE","JOR","LBN","SYR","YEM","OMN","QAT","KWT","BHR","AZE","ARM","GEO"],
+
+  America_NorthCentral: ["USA","CAN","MEX", "GTM","HND","SLV","NIC","CRI","PAN","BLZ","CUB","DOM"],
+  America_Caribbean: ["HTI","JAM","PRI","BHS","TTO","BRB","LCA","ATG","KNA","VCT","DMA","GRD","ABW","CUW","SXM","CYM","VIR","VGB","BMU","AIA","MSR","TCAS","GLP","MTQ","BLM"],
+  America_South: ["BRA","ARG","COL","PER","VEN","CHL","ECU","BOL","PRY","URY","GUY","SUR","GUF","FLK"]
+};
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -12,7 +32,6 @@ export async function GET() {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    // Fetch challenges where user is either challenger or challenged
     const challenges = await prisma.challenge.findMany({
       where: {
         OR: [
@@ -75,42 +94,53 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No puedes retarte a ti mismo" }, { status: 400 });
     }
 
-    // Build filter for countries based on scopeValues
+    // Filter candidate countries based on scopeValues
     const items = scopeValues.split(",").map((s: string) => s.trim());
-    let countryWhere: any = {};
+    const allowedISOs = new Set<string>();
+    let useAllCountries = false;
 
     if (items.includes("world") || items.includes("Todo el Mundo") || items.includes("Mundo")) {
-      countryWhere = {}; // All countries
+      useAllCountries = true;
     } else {
-      const orConditions: any[] = [];
-
-      items.forEach((item: string) => {
+      for (const item of items) {
         if (["Europa", "América", "Asia", "África", "Oceanía"].includes(item)) {
-          orConditions.push({ continent: { contains: item, mode: "insensitive" } });
+          const contCountries = await prisma.country.findMany({
+            where: { continent: { contains: item, mode: "insensitive" } },
+            select: { id: true }
+          });
+          contCountries.forEach(c => allowedISOs.add(c.id));
+        } else if (item === "Islas") {
+          ISLAND_COUNTRIES.forEach(iso => allowedISOs.add(iso));
+        } else if (SUBREGIONS[item]) {
+          SUBREGIONS[item].forEach(iso => allowedISOs.add(iso));
         } else {
           const cleanItem = item.replace(/_/g, " ");
-          orConditions.push({
-            OR: [
-              { continent: { contains: cleanItem, mode: "insensitive" } },
-              { name: { contains: cleanItem, mode: "insensitive" } }
-            ]
+          const matchCountries = await prisma.country.findMany({
+            where: {
+              OR: [
+                { continent: { contains: cleanItem, mode: "insensitive" } },
+                { name: { contains: cleanItem, mode: "insensitive" } }
+              ]
+            },
+            select: { id: true }
           });
+          matchCountries.forEach(c => allowedISOs.add(c.id));
         }
-      });
-
-      if (orConditions.length > 0) {
-        countryWhere = { OR: orConditions };
       }
     }
 
-    // Fetch candidate countries from DB
-    let countries = await prisma.country.findMany({
-      where: countryWhere,
-      select: { id: true }
-    });
+    let countries: { id: string }[] = [];
+    if (useAllCountries) {
+      countries = await prisma.country.findMany({ select: { id: true } });
+    } else if (allowedISOs.size > 0) {
+      countries = await prisma.country.findMany({
+        where: { id: { in: Array.from(allowedISOs) } },
+        select: { id: true }
+      });
+    }
 
-    // Fallback if filter returned too few
-    if (countries.length < 5) {
+    // Only fallback if filter returned 0 countries
+    if (countries.length === 0) {
       countries = await prisma.country.findMany({
         select: { id: true }
       });
