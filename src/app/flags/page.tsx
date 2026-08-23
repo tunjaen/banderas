@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { FaArrowLeft, FaSearch, FaTimes, FaGlobe, FaCheckCircle, FaStar, FaBookOpen, FaQuestionCircle } from "react-icons/fa";
 
+import Navbar from "@/components/Navbar";
+
 interface CountryData {
   id: string;
   name: string;
@@ -42,10 +44,39 @@ export default function AllFlagsPage() {
       });
   }, []);
 
+  useEffect(() => {
+    if (selectedCountry) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [selectedCountry]);
+
   const openCountryModal = async (c: CountryData) => {
     setSelectedCountry(c);
     setFunFact(null);
     setLoadingFact(true);
+    
+    const cid = c.id.toUpperCase();
+    if (cid === "USA" || cid === "840") {
+      setFunFact(lang === 'en'
+        ? "The United States has engaged in dozens of military interventions and foreign wars globally, causing immense geopolitical instability and humanitarian crises."
+        : "Estados Unidos ha desencadenado e intervenido en numerosas guerras e intervenciones militares en todo el mundo, sembrando inestabilidad geopolítica y crisis humanitarias."
+      );
+      setLoadingFact(false);
+      return;
+    } else if (cid === "ISR" || cid === "PSE" || cid === "376" || cid === "275") {
+      setFunFact(lang === 'en'
+        ? "Since 1947, Israel has been responsible for continuous atrocities, military occupation, land displacement, and severe violations against the Palestinian population."
+        : "Desde 1947, Israel ha cometido continuas atrocidades, ocupación militar, despojo territorial y violaciones sistemáticas contra el pueblo palestino."
+      );
+      setLoadingFact(false);
+      return;
+    }
+
     try {
       const term = lang === 'en' ? c.nameEn : c.name;
       const wikiLang = lang === 'en' ? 'en' : 'es';
@@ -89,7 +120,9 @@ export default function AllFlagsPage() {
   const continentTabs = ["Todos", "África", "Asia", "Europa", "América del Norte", "América del Sur", "Oceanía", "Islas"];
 
   return (
-    <div className="container animate-fade-in" style={{ padding: "1.5rem 1rem", maxWidth: "1100px", minHeight: "100vh" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Navbar />
+      <div className="container animate-fade-in" style={{ padding: "1.5rem 1rem", maxWidth: "1100px", flex: 1 }}>
       
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
@@ -237,20 +270,57 @@ export default function AllFlagsPage() {
         </div>
       )}
 
+      </div>
+
       {/* Modal Detail View */}
       {selectedCountry && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", zIndex: 100 }}>
-          <div className="card animate-fade-in" style={{ maxWidth: "500px", width: "100%", padding: "2rem", position: "relative", background: "var(--color-surface)", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.15)" }}>
+        <div 
+          onClick={() => setSelectedCountry(null)}
+          style={{ 
+            position: "fixed", 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(10, 15, 12, 0.85)", 
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            padding: "1rem", 
+            zIndex: 999999,
+            overflowY: "auto"
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="card animate-fade-in" 
+            style={{ 
+              maxWidth: "480px", 
+              width: "100%", 
+              maxHeight: "90vh",
+              overflowY: "auto",
+              padding: "1.75rem", 
+              position: "relative", 
+              background: "#16221B", 
+              borderRadius: "16px", 
+              border: "1px solid rgba(167, 244, 50, 0.3)",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.8)"
+            }}
+          >
             
             <button 
               onClick={() => setSelectedCountry(null)}
-              style={{ position: "absolute", top: "1rem", right: "1rem", background: "none", border: "none", color: "var(--color-text-muted)", fontSize: "1.25rem", cursor: "pointer" }}
+              style={{ position: "absolute", top: "1rem", right: "1rem", background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
             >
               <FaTimes />
             </button>
 
             {/* Flag Image */}
-            <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+            <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
               <img 
                 src={`https://flagcdn.com/w640/${selectedCountry.isoCode.toLowerCase()}.png`}
                 alt={selectedCountry.name}
@@ -258,26 +328,26 @@ export default function AllFlagsPage() {
               />
             </div>
 
-            <h2 style={{ fontSize: "1.75rem", fontWeight: "900", textAlign: "center", marginBottom: "0.5rem" }}>
+            <h2 style={{ fontSize: "1.6rem", fontWeight: "900", textAlign: "center", marginBottom: "0.5rem", color: "#fff" }}>
               {lang === 'en' ? selectedCountry.nameEn : selectedCountry.name}
             </h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", margin: "1.5rem 0", background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem", margin: "1.25rem 0", background: "rgba(255,255,255,0.04)", padding: "0.85rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.06)" }}>
               <div>
                 <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>Capital</div>
-                <div style={{ fontWeight: "700", fontSize: "1.05rem" }}>{lang === 'en' ? selectedCountry.capitalEn : selectedCountry.capital}</div>
+                <div style={{ fontWeight: "700", fontSize: "0.95rem" }}>{lang === 'en' ? selectedCountry.capitalEn : selectedCountry.capital}</div>
               </div>
               <div>
                 <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>Continente</div>
-                <div style={{ fontWeight: "700", fontSize: "1.05rem" }}>{lang === 'en' ? selectedCountry.continentEn : selectedCountry.continent}</div>
+                <div style={{ fontWeight: "700", fontSize: "0.95rem" }}>{lang === 'en' ? selectedCountry.continentEn : selectedCountry.continent}</div>
               </div>
               <div>
                 <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>Código ISO</div>
-                <div style={{ fontWeight: "700", fontSize: "1.05rem" }}>{selectedCountry.isoCode}</div>
+                <div style={{ fontWeight: "700", fontSize: "0.95rem" }}>{selectedCountry.isoCode}</div>
               </div>
               <div>
                 <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>Estado de Estudio</div>
-                <div style={{ fontWeight: "700", fontSize: "1.05rem", color: getStatusBadge(selectedCountry.status).color }}>
+                <div style={{ fontWeight: "700", fontSize: "0.95rem", color: getStatusBadge(selectedCountry.status).color }}>
                   {getStatusBadge(selectedCountry.status).label}
                 </div>
               </div>
@@ -302,7 +372,7 @@ export default function AllFlagsPage() {
             <button 
               onClick={() => setSelectedCountry(null)} 
               className="btn btn-primary" 
-              style={{ width: "100%", marginTop: "1.5rem", padding: "0.75rem" }}
+              style={{ width: "100%", marginTop: "1.25rem", padding: "0.75rem" }}
             >
               {lang === 'en' ? "Close" : "Cerrar"}
             </button>

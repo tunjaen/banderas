@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { FaTimes, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaClock, FaFire, FaStopwatch } from "react-icons/fa";
 import { useLanguage } from "@/lib/LanguageContext";
 import SteveFireCanvas from "@/components/SteveFireCanvas";
+import SubRegionSelector from "@/components/SubRegionSelector";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
@@ -121,6 +122,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   const mode = resolvedParams.mode;
   const searchParams = useSearchParams();
   const continent = searchParams.get("continent");
+  const subregion = searchParams.get("subregion");
   const router = useRouter();
   const { t, lang } = useLanguage();
 
@@ -158,7 +160,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
         total: questionCount,
         correct: correctCount,
         xp: sessionXp,
-        continent: continent || "Mundo"
+        continent: continent || subregion || "Mundo"
       }));
       router.push("/learn/summary");
       return;
@@ -175,6 +177,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       const url = new URL("/api/game/next", window.location.origin);
       url.searchParams.set("mode", mode);
       if (continent) url.searchParams.set("continent", continent);
+      if (subregion) url.searchParams.set("subregion", subregion);
       if (sessionHistory.length > 0) url.searchParams.set("exclude", sessionHistory.join(","));
 
       const res = await fetch(url.toString());
@@ -191,12 +194,12 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   };
 
   useEffect(() => {
-    if (mode === "continents" && !continent) {
+    if ((mode === "continents" || mode === "spatial") && !continent && !subregion) {
       setLoading(false);
       return;
     }
     fetchQuestion();
-  }, [mode, continent]);
+  }, [mode, continent, subregion]);
 
   // Timer interval effect (blocked immediately if timer disabled, feedback active, or answer submitting)
   useEffect(() => {
@@ -228,7 +231,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       const res = await fetch("/api/game/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ countryId: question.targetId, isCorrect, mode })
+        body: JSON.stringify({ countryId: question.targetId, isCorrect, mode, subregion })
       });
       const data = await res.json();
       setFeedback({ ...data, isCorrect, isTimeout });
@@ -237,20 +240,33 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       if (isCorrect) setCorrectCount(prev => prev + 1);
       setSessionXp(prev => prev + (data.xpGained || 0));
 
-      // Fetch fun fact from Wikipedia
-      try {
-        const term = lang === 'en' ? question.countryNameEn : question.countryName;
-        const wikiLang = lang === 'en' ? 'en' : 'es';
-        const wikiRes = await fetch(`https://${wikiLang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`);
-        if (wikiRes.ok) {
-          const wikiData = await wikiRes.json();
-          if (wikiData.extract) {
-            const sentences = wikiData.extract.split(/(?<=[.!?])\s+/);
-            setFunFact(sentences.slice(0, 2).join(' '));
+      // Fetch fun fact from Wikipedia or custom override
+      const countryId = question.targetId.toUpperCase();
+      if (countryId === "USA" || countryId === "840") {
+        setFunFact(lang === 'en'
+          ? "The United States has engaged in dozens of military interventions and foreign wars globally, causing immense geopolitical instability and humanitarian crises."
+          : "Estados Unidos ha desencadenado e intervenido en numerosas guerras e intervenciones militares en todo el mundo, sembrando inestabilidad geopolítica y crisis humanitarias."
+        );
+      } else if (countryId === "ISR" || countryId === "PSE" || countryId === "376" || countryId === "275") {
+        setFunFact(lang === 'en'
+          ? "Since 1947, Israel has been responsible for continuous atrocities, military occupation, land displacement, and severe violations against the Palestinian population."
+          : "Desde 1947, Israel ha cometido continuas atrocidades, ocupación militar, despojo territorial y violaciones sistemáticas contra el pueblo palestino."
+        );
+      } else {
+        try {
+          const term = lang === 'en' ? question.countryNameEn : question.countryName;
+          const wikiLang = lang === 'en' ? 'en' : 'es';
+          const wikiRes = await fetch(`https://${wikiLang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`);
+          if (wikiRes.ok) {
+            const wikiData = await wikiRes.json();
+            if (wikiData.extract) {
+              const sentences = wikiData.extract.split(/(?<=[.!?])\s+/);
+              setFunFact(sentences.slice(0, 2).join(' '));
+            }
           }
+        } catch (err) {
+          console.error("Error fetching fun fact:", err);
         }
-      } catch (err) {
-        console.error("Error fetching fun fact:", err);
       }
 
     } catch (e) {
@@ -258,71 +274,8 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
     }
   };
 
-  if ((mode === "continents" || mode === "spatial") && !continent) {
-    const categories = [
-      { id: "Mundo", name: "Mundo", nameEn: "World", icon: "🌍", color: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.5)" },
-      { id: "África", name: "África", nameEn: "Africa", icon: "🌍" },
-      { id: "Asia", name: "Asia", nameEn: "Asia", icon: "🌏" },
-      { id: "Europa", name: "Europa", nameEn: "Europe", icon: "🌍" },
-      { id: "América del Norte", name: "América del Norte", nameEn: "North America", icon: "🌎" },
-      { id: "América del Sur", name: "América del Sur", nameEn: "South America", icon: "🌎" },
-      { id: "Oceanía", name: "Oceanía", nameEn: "Oceania", icon: "🌏" },
-      { id: "Islas", name: "Islas", nameEn: "Islands", icon: "🏝️", subtitle: "Cazatesoros", subtitleEn: "Treasure Hunter", topRightIcon: "🏴‍☠️", color: "rgba(14, 165, 233, 0.12)", border: "rgba(14, 165, 233, 0.5)" },
-    ];
-
-    return (
-      <div className="container animate-fade-in" style={{ padding: "1.5rem 1rem", maxWidth: "800px" }}>
-        <button onClick={() => router.push("/dashboard")} className="btn btn-outline" style={{ marginBottom: "1.5rem" }}>
-          {lang === 'en' ? "← Back" : "← Volver"}
-        </button>
-        <h1 className="text-center" style={{ marginBottom: "1.5rem", fontSize: "1.75rem", fontWeight: "800" }}>
-          {lang === 'en' ? "Choose a Region or Category" : "Elige una Región o Categoría"}
-        </h1>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
-          {categories.map(c => {
-            const label = lang === 'en' ? c.nameEn : c.name;
-            return (
-              <button
-                key={c.id}
-                onClick={() => router.push(`/learn/${mode}?continent=${encodeURIComponent(c.id)}`)}
-                className="card hover-scale"
-                style={{
-                  position: "relative",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "1.25rem 0.5rem",
-                  textAlign: "center",
-                  fontSize: "0.95rem",
-                  fontWeight: "700",
-                  color: "var(--color-text)",
-                  cursor: "pointer",
-                  border: `1px solid ${c.border || "rgba(255,255,255,0.1)"}`,
-                  background: c.color || "var(--color-surface)",
-                  borderRadius: "var(--radius-md)",
-                  gap: "0.35rem"
-                }}
-              >
-                {c.topRightIcon && (
-                  <span style={{ position: "absolute", top: "6px", right: "6px", fontSize: "1.1rem" }}>
-                    {c.topRightIcon}
-                  </span>
-                )}
-                <span style={{ fontSize: "2rem" }}>{c.icon}</span>
-                <span style={{ wordBreak: "break-word", lineHeight: "1.2" }}>{label}</span>
-                {c.subtitle && (
-                  <span style={{ fontSize: "0.75rem", color: "var(--color-warning)", fontWeight: "800", marginTop: "-0.1rem" }}>
-                    {lang === 'en' ? c.subtitleEn : c.subtitle}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
+  if ((mode === "continents" || mode === "spatial") && !continent && !subregion) {
+    return <SubRegionSelector />;
   }
 
   if (loading) {
@@ -379,6 +332,11 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
       </header>
 
       <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        {mode === "weaknesses" && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", background: "rgba(239, 68, 68, 0.15)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "0.25rem 0.75rem", borderRadius: "20px", fontSize: "0.8rem", fontWeight: "800", marginBottom: "0.75rem" }}>
+            <span>🎯</span> {lang === 'en' ? "Reviewing Mistakes: Highest Error Priority" : "Repasando Errores: Banderas con mayor prioridad de fallo"}
+          </div>
+        )}
         <h2 style={{ fontSize: "1.5rem", fontWeight: "700", marginBottom: "1.5rem", textAlign: "center" }}>
           {mode === "spatial" ? t.quiz.spatialQ : t.quiz.flagQ}
         </h2>

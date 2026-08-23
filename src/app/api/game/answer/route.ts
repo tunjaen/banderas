@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
-    const { countryId, isCorrect, mode } = await req.json();
+    const { countryId, isCorrect, mode, subregion, difficulty } = await req.json();
     if (!countryId || typeof isCorrect !== "boolean") {
       return NextResponse.json({ message: "Faltan parámetros" }, { status: 400 });
     }
@@ -109,18 +109,29 @@ export async function POST(req: Request) {
 
       if (currentStreak > longestStreak) longestStreak = currentStreak;
 
-      // Add XP according to mastery status & mode
+      // Add XP according to mastery status & difficulty level
+      // Easy level = 5 XP, Medium level = 10 XP, Hard/Special level = 15 XP
+      const EASY_SUBREGIONS = ["Europe_WestNorth", "Asia_EastSE", "America_NorthCentral", "America_South"];
+      const HARD_SUBREGIONS = ["Asia_MiddleEast", "Africa_CentralSouth"];
+
+      let baseXP = 10; // default medium
+      if (difficulty === "facil" || (subregion && EASY_SUBREGIONS.includes(subregion))) {
+        baseXP = 5; // Easy mode awards 5 XP
+      } else if (difficulty === "dificil" || difficulty === "especial" || (subregion && HARD_SUBREGIONS.includes(subregion))) {
+        baseXP = 15; // Hard mode awards 15 XP
+      }
+
       const wasDominado = progress?.status === "Dominado";
 
       if (isCorrect) {
         if (wasDominado) {
-          xpGained = mode === "world" ? 5 : 0;
+          xpGained = mode === "world" ? 5 : 2;
         } else {
-          xpGained = 10;
-          if (currentStreak > 5) xpGained += 5;
+          xpGained = baseXP;
+          if (currentStreak > 5) xpGained += Math.round(baseXP * 0.5); // 50% streak bonus
         }
       } else {
-        xpGained = 2;
+        xpGained = 1;
       }
       xp += xpGained;
 

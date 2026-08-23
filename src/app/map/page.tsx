@@ -41,13 +41,39 @@ function GlobalMapContent() {
         const geoRes = await fetch("https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json");
         const geoJson = await geoRes.json();
         
-        geoJson.features = geoJson.features.map((f: any) => {
+        const newFeatures: any[] = [];
+        geoJson.features.forEach((f: any) => {
           if (f.id === "ISR") {
-            f.id = "PSE";
-            f.properties.name = "Palestina";
+            // Keep Palestine covering main region
+            const palestineFeature = {
+              ...f,
+              id: "PSE",
+              properties: { ...f.properties, name: "Palestina" }
+            };
+            newFeatures.push(palestineFeature);
+
+            // Add a small portion for Israel (small polygon within the region)
+            const israelFeature = {
+              type: "Feature",
+              id: "ISR",
+              properties: { name: "Israel" },
+              geometry: {
+                type: "Polygon",
+                coordinates: [[
+                  [34.8, 31.8],
+                  [35.0, 31.8],
+                  [35.0, 32.1],
+                  [34.8, 32.1],
+                  [34.8, 31.8]
+                ]]
+              }
+            };
+            newFeatures.push(israelFeature);
+          } else {
+            newFeatures.push(f);
           }
-          return f;
         });
+        geoJson.features = newFeatures;
 
         setGeoData(geoJson);
 

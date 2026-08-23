@@ -1608,18 +1608,6 @@
     "continentEn": "Asia"
   },
   {
-    "id": "MAF",
-    "name": "Saint Martin",
-    "nameEn": "Saint Martin",
-    "continent": "América del Norte",
-    "capital": "Marigot",
-    "capitalEn": "Marigot",
-    "isoCode": "mf",
-    "lat": 18.08333333,
-    "lng": -63.95,
-    "continentEn": "North America"
-  },
-  {
     "id": "MAR",
     "name": "Marruecos",
     "nameEn": "Morocco",
@@ -2316,18 +2304,6 @@
     "continentEn": "Asia"
   },
   {
-    "id": "SJM",
-    "name": "Islas Svalbard y Jan Mayen",
-    "nameEn": "Svalbard and Jan Mayen",
-    "continent": "Europa",
-    "capital": "Longyearbyen",
-    "capitalEn": "Longyearbyen",
-    "isoCode": "sj",
-    "lat": 78,
-    "lng": 20,
-    "continentEn": "Europe"
-  },
-  {
     "id": "SLB",
     "name": "Islas Salomón",
     "nameEn": "Solomon Islands",
@@ -2734,18 +2710,6 @@
     "lat": 49,
     "lng": 32,
     "continentEn": "Europe"
-  },
-  {
-    "id": "UMI",
-    "name": "Islas Ultramarinas Menores de Estados Unidos",
-    "nameEn": "United States Minor Outlying Islands",
-    "continent": "América del Norte",
-    "capital": "Desconocida",
-    "capitalEn": "Unknown",
-    "isoCode": "um",
-    "lat": 19.3,
-    "lng": 166.633333,
-    "continentEn": "North America"
   },
   {
     "id": "URY",
