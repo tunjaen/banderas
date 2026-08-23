@@ -101,7 +101,6 @@ export default function CreateChallengeModal({
         .then(data => {
           if (data.users && data.users.length > 0) {
             setPlayers(data.users);
-            setSelectedPlayerId(data.users[0].id);
           }
         })
         .catch(e => console.error(e));
@@ -246,10 +245,13 @@ export default function CreateChallengeModal({
             <select
               value={selectedPlayerId}
               onChange={(e) => setSelectedPlayerId(e.target.value)}
-              style={{ width: "100%", padding: "0.85rem", background: "#0D1410", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700" }}
+              style={{ width: "100%", padding: "0.85rem", background: "#0D1410", color: selectedPlayerId ? "#fff" : "var(--color-text-muted)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700" }}
             >
+              <option value="" disabled style={{ color: "#999" }}>
+                -- Selecciona un jugador --
+              </option>
               {players.map(p => (
-                <option key={p.id} value={p.id}>
+                <option key={p.id} value={p.id} style={{ color: "#fff" }}>
                   {p.isOnline ? "🟢 " : "⚪ "}{p.name || "Jugador"} (Niv. {p.level || 1} • {p.xp || 0} XP)
                 </option>
               ))}
