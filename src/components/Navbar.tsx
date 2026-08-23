@@ -29,6 +29,7 @@ export default function Navbar({ user }: NavbarProps) {
   const [onlineCount, setOnlineCount] = useState<number>(0);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [showOnlineModal, setShowOnlineModal] = useState(false);
+  const [pendingChallengesCount, setPendingChallengesCount] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem("app-timer-enabled");
@@ -41,6 +42,12 @@ export default function Navbar({ user }: NavbarProps) {
           const data = await res.json();
           setOnlineCount(data.count ?? 0);
           setOnlineUsers(data.users || []);
+        }
+
+        const chRes = await fetch("/api/challenges");
+        if (chRes.ok) {
+          const chData = await chRes.json();
+          setPendingChallengesCount(chData.pendingCount || 0);
         }
       } catch (e) {
         console.error("Error fetching online status:", e);
@@ -135,6 +142,29 @@ export default function Navbar({ user }: NavbarProps) {
 
           {/* Right Controls: Timer, Streak, Lang, Logout & Mobile Toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {/* Pending Challenges Badge */}
+            {pendingChallengesCount > 0 && (
+              <Link
+                href="/dashboard"
+                title="Retos pendientes por responder"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  background: "rgba(239, 68, 68, 0.15)",
+                  color: "#EF4444",
+                  border: "1px solid rgba(239, 68, 68, 0.4)",
+                  padding: "0.35rem 0.65rem",
+                  borderRadius: "var(--radius-full)",
+                  fontSize: "0.825rem",
+                  fontWeight: "800",
+                  textDecoration: "none"
+                }}
+              >
+                <span>⚔️ ({pendingChallengesCount})</span>
+              </Link>
+            )}
+
             {/* Online Indicator Badge */}
             <button
               onClick={() => setShowOnlineModal(true)}

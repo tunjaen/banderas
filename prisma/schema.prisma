@@ -29,9 +29,18 @@ model User {
   spatialCorrect Int      @default(0)
   spatialWrong   Int      @default(0)
 
+  // 1v1 Duels Stats
+  duelsWon    Int       @default(0)
+  duelsLost   Int       @default(0)
+  duelsDrawn  Int       @default(0)
+  duelsTotal  Int       @default(0)
+
   progress      UserProgress[]
   accounts      Account[]
   sessions      Session[]
+
+  challengesSent     Challenge[] @relation("ChallengerUser")
+  challengesReceived Challenge[] @relation("ChallengedUser")
 }
 
 model Country {
@@ -108,3 +117,35 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model Challenge {
+  id              String   @id @default(cuid())
+  challengerId    String
+  challengedId    String
+  
+  gameMode        String   @default("LIGHTNING") // "LIGHTNING" (10s timer) or "MARATHON"
+  scopeType       String   @default("subregion_multi") // "continent", "subregion_multi", "world"
+  scopeValues     String   // e.g. "Europa" or "Europe_East,Asia_East"
+  targetScore     Int      @default(10) // Flag count
+  flagSequence    String   // JSON string of ISO codes ["ESP","FRA"...]
+  
+  // Challenger Results
+  challengerScore Int?     
+  challengerTimeMs Int?    
+  challengerDone  Boolean  @default(false)
+
+  // Challenged Results
+  challengedScore Int?
+  challengedTimeMs Int?
+  challengedDone  Boolean  @default(false)
+
+  winnerId        String?  // userId or "DRAW"
+
+  status          String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, DECLINED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  challenger      User     @relation("ChallengerUser", fields: [challengerId], references: [id], onDelete: Cascade)
+  challenged      User     @relation("ChallengedUser", fields: [challengedId], references: [id], onDelete: Cascade)
+}
+

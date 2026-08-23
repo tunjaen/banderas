@@ -23,11 +23,13 @@ import {
   FaMapMarkedAlt,
   FaFlag
 } from "react-icons/fa";
+import SwordsIcon from "@/components/SwordsIcon";
 import LogoutButton from "./LogoutButton";
 import LanguageSelector from "@/components/LanguageSelector";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/lib/LanguageContext";
 import LeaderboardTab from "./LeaderboardTab";
+import CreateChallengeModal from "@/components/CreateChallengeModal";
 
 export default function DashboardClient({ 
   user, 
@@ -50,6 +52,15 @@ export default function DashboardClient({
   const [activeTab, setActiveTab] = useState("progress");
   const [isProgressExpanded, setIsProgressExpanded] = useState(false);
   const [showIslandModal, setShowIslandModal] = useState(false);
+  const [showCreateChallenge, setShowCreateChallenge] = useState(false);
+  const [challengesData, setChallengesData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/challenges")
+      .then(res => res.json())
+      .then(data => setChallengesData(data))
+      .catch(e => console.error(e));
+  }, []);
 
   // XP & Level calculations
   const lvl = user.level || 1;
@@ -293,6 +304,73 @@ export default function DashboardClient({
               )}
             </div>
 
+            {/* Mis Duelos 1v1 Activos y Pendientes */}
+            {challengesData?.active && challengesData.active.length > 0 && (
+              <div style={{ marginBottom: "2rem" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <SwordsIcon size={20} style={{ color: "#EF4444" }} />
+                    <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
+                      Mis Duelos 1v1 ({challengesData.active.length})
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setShowCreateChallenge(true)}
+                    className="btn btn-outline"
+                    style={{ padding: "0.35rem 0.85rem", fontSize: "0.8rem", borderRadius: "8px" }}
+                  >
+                    + Nuevo Duelo
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {challengesData.active.map((ch: any) => {
+                    const isMyTurn = (ch.challengerId === user.id && !ch.challengerDone) || (ch.challengedId === user.id && !ch.challengedDone);
+                    const rivalName = ch.challengerId === user.id ? ch.challenged.name : ch.challenger.name;
+
+                    return (
+                      <div
+                        key={ch.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: isMyTurn ? "rgba(239, 68, 68, 0.1)" : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${isMyTurn ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.08)"}`,
+                          padding: "1rem 1.25rem",
+                          borderRadius: "14px",
+                          gap: "1rem",
+                          flexWrap: "wrap"
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                              VS {rivalName || "Jugador"}
+                            </span>
+                            <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago (10s)" : "🏃 Gran Maratón"}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
+                            Territorio: {ch.scopeValues} • {ch.targetScore} Banderas
+                          </div>
+                        </div>
+
+                        <Link
+                          href={`/learn/challenge/${ch.id}`}
+                          className="btn btn-primary"
+                          style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: isMyTurn ? "#EF4444" : "#3B82F6" }}
+                        >
+                          {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Main Game Mode Categories */}
             
             {/* Category 1: Modo Conquista (Hero Featured Card) */}
@@ -363,32 +441,45 @@ export default function DashboardClient({
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
                 
-                {/* Repasar Errores */}
+                {/* 1. Duelos 1v1 */}
+                <div 
+                  onClick={() => setShowCreateChallenge(true)} 
+                  className="card hover-scale" 
+                  style={{ 
+                    textDecoration: "none", 
+                    display: "block", 
+                    padding: "1.25rem", 
+                    border: "1px solid rgba(168, 85, 247, 0.4)", 
+                    background: "linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.08))", 
+                    cursor: "pointer" 
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                    <SwordsIcon size={26} style={{ color: "#A855F7" }} />
+                    <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(168, 85, 247, 0.2)", color: "#C084FC", padding: "0.15rem 0.5rem", borderRadius: "20px" }}>¡Nuevo!</span>
+                  </div>
+                  <h3 style={{ fontSize: "1.1rem", color: "#C084FC", fontWeight: "800" }}>
+                    {lang === 'en' ? "1v1 Duels" : "Duelos 1v1"}
+                  </h3>
+                  <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                    {lang === 'en' 
+                      ? "Challenge other players in 1v1 duels with the exact same flag sequence. Show who's best!" 
+                      : "Desafía a otros jugadores en duelos 1v1 con la misma secuencia de banderas. ¡Demuestra quién manda!"}
+                  </p>
+                </div>
+
+                {/* 2. Repasar Errores */}
                 <Link href="/learn/weaknesses" className="card hover-scale" style={{ textDecoration: "none", display: "block", padding: "1.25rem", border: "1px solid rgba(239, 68, 68, 0.3)", background: "linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--color-surface))" }}>
                   <FaRedo size={26} className="text-danger" style={{ marginBottom: "0.75rem" }} />
                   <h3 style={{ fontSize: "1.1rem", color: "#EF4444", fontWeight: "800" }}>{t.dashboard.modes.weaknesses.title}</h3>
                   <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>{t.dashboard.modes.weaknesses.desc}</p>
                 </Link>
 
-                {/* Reto Espacial / Mapa */}
+                {/* 3. Mapa Espacial */}
                 <Link href="/learn/spatial" className="card hover-scale" style={{ textDecoration: "none", display: "block", padding: "1.25rem", border: "1px solid rgba(16, 185, 129, 0.3)", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.08), var(--color-surface))" }}>
                   <FaMapMarkerAlt size={26} className="text-success" style={{ marginBottom: "0.75rem" }} />
                   <h3 style={{ fontSize: "1.1rem", color: "#10B981", fontWeight: "800" }}>{t.dashboard.modes.spatial.title}</h3>
                   <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>{t.dashboard.modes.spatial.desc}</p>
-                </Link>
-
-                {/* Todo el Mundo */}
-                <Link href="/learn/world" className="card hover-scale" style={{ textDecoration: "none", display: "block", padding: "1.25rem" }}>
-                  <FaGlobe size={26} className="text-primary" style={{ marginBottom: "0.75rem" }} />
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800" }}>{t.dashboard.modes.world.title}</h3>
-                  <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>{t.dashboard.modes.world.desc}</p>
-                </Link>
-
-                {/* Cazatesoros de Islas */}
-                <Link href="/learn/continents?continent=Islas" className="card hover-scale" style={{ textDecoration: "none", display: "block", padding: "1.25rem", border: "1px solid rgba(245, 158, 11, 0.3)", background: "linear-gradient(135deg, rgba(245, 158, 11, 0.08), var(--color-surface))" }}>
-                  <span style={{ fontSize: "1.75rem", display: "block", marginBottom: "0.5rem" }}>🏴‍☠️</span>
-                  <h3 style={{ fontSize: "1.1rem", color: "#F59E0B", fontWeight: "800" }}>Cazatesoros de Islas</h3>
-                  <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>Domina las islas y territorios dependientes del mundo.</p>
                 </Link>
 
               </div>
@@ -460,6 +551,11 @@ export default function DashboardClient({
               </button>
             </div>
           </div>
+        )}
+
+        {/* Create Challenge Modal */}
+        {showCreateChallenge && (
+          <CreateChallengeModal onClose={() => setShowCreateChallenge(false)} />
         )}
       </div>
     </div>

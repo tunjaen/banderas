@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { FaFire, FaGlobe, FaMedal, FaMapMarkerAlt, FaFlag, FaRocket, FaCompass } from "react-icons/fa";
+import SwordsIcon from "@/components/SwordsIcon";
 
 export default function PlayerProfilePage() {
   const params = useParams();
@@ -104,6 +105,42 @@ export default function PlayerProfilePage() {
           <div style={{ background: "rgba(255,255,255,0.04)", padding: "1rem", borderRadius: "10px" }}>
             <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.2rem" }}>Respuestas Totales</div>
             <div style={{ fontSize: "1.5rem", fontWeight: "800" }}>{sTotal}</div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Dedicated 1v1 Duels Stats Card */}
+      <div className="card" style={{ marginBottom: "2rem", padding: "1.5rem", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(236, 72, 153, 0.08))", border: "1px solid rgba(168, 85, 247, 0.3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem", color: "#C084FC", margin: 0 }}>
+            <SwordsIcon size={22} color="#C084FC" /> {lang === 'en' ? "1v1 Player Duels Stats" : "Estadísticas de Duelos 1v1"}
+          </h2>
+          <div style={{ background: "rgba(168, 85, 247, 0.2)", color: "#C084FC", padding: "0.4rem 0.8rem", borderRadius: "20px", fontSize: "0.875rem", fontWeight: "900", border: "1px solid rgba(168, 85, 247, 0.4)" }}>
+            📈 {user.duelsWinRate || 0}% Win Rate
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem" }}>
+          
+          <div style={{ background: "rgba(255,255,255,0.04)", padding: "1rem", borderRadius: "10px", textAlign: "center" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.2rem" }}>Victorias</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#10B981" }}>🏆 {user.duelsWon || 0}</div>
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.04)", padding: "1rem", borderRadius: "10px", textAlign: "center" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.2rem" }}>Derrotas</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#EF4444" }}>💀 {user.duelsLost || 0}</div>
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.04)", padding: "1rem", borderRadius: "10px", textAlign: "center" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.2rem" }}>Empates</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#F59E0B" }}>🤝 {user.duelsDrawn || 0}</div>
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.04)", padding: "1rem", borderRadius: "10px", textAlign: "center" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.2rem" }}>Total Duelos</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#60A5FA" }}>⚔️ {user.duelsTotal || 0}</div>
           </div>
 
         </div>

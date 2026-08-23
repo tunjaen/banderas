@@ -20,6 +20,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         flagWrong: true,
         spatialCorrect: true,
         spatialWrong: true,
+        duelsWon: true,
+        duelsLost: true,
+        duelsDrawn: true,
+        duelsTotal: true,
         progress: {
           include: {
             country: {
@@ -79,6 +83,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const islandsMasteredCount = user.progress.filter(p => p.status === "Dominado" && ISLAND_COUNTRIES.includes(p.country.isoCode.toUpperCase())).length;
 
     const masteredCount = user.progress.filter(p => p.status === "Dominado").length;
+    const duelsWinRate = user.duelsTotal > 0 ? Math.round((user.duelsWon / user.duelsTotal) * 100) : 0;
 
     return NextResponse.json({
       user: {
@@ -91,6 +96,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         longestStreak: user.longestStreak,
         spatialCorrect: user.spatialCorrect,
         spatialWrong: user.spatialWrong,
+        duelsWon: user.duelsWon,
+        duelsLost: user.duelsLost,
+        duelsDrawn: user.duelsDrawn,
+        duelsTotal: user.duelsTotal,
+        duelsWinRate,
         masteredCount,
         islandsMasteredCount
       },
