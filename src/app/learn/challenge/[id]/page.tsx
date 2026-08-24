@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
@@ -39,7 +39,10 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   const [myWrongCount, setMyWrongCount] = useState(0);
   const [dominatedBanner, setDominatedBanner] = useState<string | null>(null);
 
-  const loadChallengeData = async (isInitial = false) => {
+  // Ref to ensure questions are loaded strictly ONCE per session and never changed by background updates
+  const hasLoadedQuestionsRef = useRef(false);
+
+  const loadChallengeData = async () => {
     try {
       const res = await fetch(`/api/challenges/${id}`);
       if (res.ok) {
@@ -47,8 +50,9 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
         if (data.challenge) {
           setChallenge(data.challenge);
           
-          // Set questions and territory ONLY on initial load or if empty
-          if (isInitial || questions.length === 0) {
+          // Set questions and territory strictly ONCE on initial load
+          if (!hasLoadedQuestionsRef.current) {
+            hasLoadedQuestionsRef.current = true;
             if (data.questions && data.questions.length > 0) {
               setQuestions(data.questions);
             }
@@ -80,12 +84,7 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   };
 
   useEffect(() => {
-    loadChallengeData(true);
-    // Poll every 10 seconds ONLY to update rival map progress without changing active questions
-    const pollInterval = setInterval(() => {
-      loadChallengeData(false);
-    }, 10000);
-    return () => clearInterval(pollInterval);
+    loadChallengeData();
   }, [id]);
 
   // 10s Timer for LIGHTNING mode per question
