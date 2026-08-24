@@ -39,17 +39,25 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   const [myWrongCount, setMyWrongCount] = useState(0);
   const [dominatedBanner, setDominatedBanner] = useState<string | null>(null);
 
-  const loadChallengeData = async () => {
+  const loadChallengeData = async (isInitial = false) => {
     try {
       const res = await fetch(`/api/challenges/${id}`);
       if (res.ok) {
         const data = await res.json();
         if (data.challenge) {
           setChallenge(data.challenge);
-          setQuestions(data.questions || []);
-          setAllTerritoryCountries(data.allTerritoryCountries || []);
+          
+          // Set questions and territory ONLY on initial load or if empty
+          if (isInitial || questions.length === 0) {
+            if (data.questions && data.questions.length > 0) {
+              setQuestions(data.questions);
+            }
+            if (data.allTerritoryCountries) {
+              setAllTerritoryCountries(data.allTerritoryCountries);
+            }
+          }
 
-          // Parse progress JSONs
+          // Parse progress JSONs for live map updates
           try {
             if (data.challenge.challengerProgressJson) {
               const cData = JSON.parse(data.challenge.challengerProgressJson);
@@ -72,9 +80,11 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   };
 
   useEffect(() => {
-    loadChallengeData();
-    // Poll every 8 seconds for live progress updates
-    const pollInterval = setInterval(loadChallengeData, 8000);
+    loadChallengeData(true);
+    // Poll every 10 seconds ONLY to update rival map progress without changing active questions
+    const pollInterval = setInterval(() => {
+      loadChallengeData(false);
+    }, 10000);
     return () => clearInterval(pollInterval);
   }, [id]);
 
