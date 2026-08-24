@@ -285,10 +285,10 @@ export default function CreateChallengeModal({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "#60A5FA", fontWeight: "800", fontSize: "0.95rem" }}>
-                <FaRunning size={14} /> Dominación
+                <FaRunning size={14} /> Dominación (3 Días)
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.25rem", lineHeight: "1.3" }}>
-                El primero en dominar todos los países del territorio gana. Acertar 3 veces cada país (en varias sesiones).
+                Tienes 3 días para acertar cada país 3 veces en varias rondas. Mapa en tiempo real y contador de tiempo restante.
               </div>
             </button>
 

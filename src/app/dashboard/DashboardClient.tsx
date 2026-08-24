@@ -236,7 +236,7 @@ export default function DashboardClient({
                       <div style={{ background: "rgba(255,255,255,0.02)", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.04)" }}>
                         <div className="flex justify-between items-center mb-1">
                           <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--color-text)" }}>
-                            {t.dashboard.mastered || "Dominio Total"}
+                            {t.dashboard.mastered || "Experto"}
                           </span>
                           <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--color-primary)" }}>
                             {masteredPercent}% <span style={{ fontSize: "0.75rem", fontWeight: "normal", color: "var(--color-text-muted)" }}>({masteredCount}/{totalCountries})</span>
@@ -259,9 +259,9 @@ export default function DashboardClient({
                     </div>
 
                     <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "var(--radius-full)", overflow: "hidden", display: "flex", marginBottom: "0.75rem" }}>
-                      {domPct > 0 && <div style={{ width: `${domPct}%`, background: "#10B981" }} title={`Dominados: ${masteredCount}`} />}
-                      {famPct > 0 && <div style={{ width: `${famPct}%`, background: "#F59E0B" }} title={`Familiar: ${familiarCount}`} />}
-                      {lrnPct > 0 && <div style={{ width: `${lrnPct}%`, background: "#3B82F6" }} title={`Aprendiendo: ${learningCount}`} />}
+                      {domPct > 0 && <div style={{ width: `${domPct}%`, background: "#10B981" }} title={`Experto: ${masteredCount}`} />}
+                      {famPct > 0 && <div style={{ width: `${famPct}%`, background: "#F59E0B" }} title={`Dominado: ${familiarCount}`} />}
+                      {lrnPct > 0 && <div style={{ width: `${lrnPct}%`, background: "#3B82F6" }} title={`Aprendido: ${learningCount}`} />}
                       {unsPct > 0 && <div style={{ width: `${unsPct}%`, background: "rgba(255,255,255,0.15)" }} title={`Por Descubrir: ${unseenCount}`} />}
                     </div>
 
@@ -269,7 +269,7 @@ export default function DashboardClient({
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.8rem", background: "rgba(16, 185, 129, 0.08)", padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
                           <FaCheckCircle className="text-success" size={12} />
-                          <span style={{ fontWeight: "600", color: "#10B981" }}>{t.dashboard.mastered || "Dominados"}</span>
+                          <span style={{ fontWeight: "600", color: "#10B981" }}>{t.dashboard.mastered || "Experto"}</span>
                         </div>
                         <span style={{ fontWeight: "800" }}>{masteredCount}</span>
                       </div>
@@ -277,7 +277,7 @@ export default function DashboardClient({
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.8rem", background: "rgba(245, 158, 11, 0.08)", padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(245, 158, 11, 0.2)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
                           <FaStar className="text-warning" size={12} />
-                          <span style={{ fontWeight: "600", color: "#F59E0B" }}>{t.dashboard.familiar || "Familiar"}</span>
+                          <span style={{ fontWeight: "600", color: "#F59E0B" }}>{t.dashboard.familiar || "Dominado"}</span>
                         </div>
                         <span style={{ fontWeight: "800" }}>{familiarCount}</span>
                       </div>
@@ -285,7 +285,7 @@ export default function DashboardClient({
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.8rem", background: "rgba(59, 130, 246, 0.08)", padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
                           <FaBookOpen style={{ color: "#3B82F6" }} size={12} />
-                          <span style={{ fontWeight: "600", color: "#3B82F6" }}>{t.dashboard.learning || "Aprendiendo"}</span>
+                          <span style={{ fontWeight: "600", color: "#3B82F6" }}>{t.dashboard.learning || "Aprendido"}</span>
                         </div>
                         <span style={{ fontWeight: "800" }}>{learningCount}</span>
                       </div>
@@ -328,6 +328,11 @@ export default function DashboardClient({
                     const isMyTurn = (ch.challengerId === user.id && !ch.challengerDone) || (ch.challengedId === user.id && !ch.challengedDone);
                     const rivalName = ch.challengerId === user.id ? ch.challenged.name : ch.challenger.name;
 
+                    const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
+                    const remainingMs = Math.max(0, expiresAtMs - Date.now());
+                    const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+                    const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
                     return (
                       <div
                         key={ch.id}
@@ -344,13 +349,18 @@ export default function DashboardClient({
                         }}
                       >
                         <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                             <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
                               VS {rivalName || "Jugador"}
                             </span>
                             <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago (10s)" : "🏃 Gran Maratón"}
+                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago (10s)" : "👑 Dominación (3 Días)"}
                             </span>
+                            {ch.gameMode === "DOMINATION" && (
+                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                                ⏳ Quedan {daysLeft}d {hoursLeft}h
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
                             Territorio: {ch.scopeValues} • {ch.targetScore} Banderas

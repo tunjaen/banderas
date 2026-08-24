@@ -258,7 +258,8 @@ export default function Navbar({ user }: NavbarProps) {
                 borderRadius: "10px",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "pointer"
+                cursor: "pointer",
+                flexShrink: 0
               }}
             >
               {isMobileMenuOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
@@ -313,6 +314,47 @@ export default function Navbar({ user }: NavbarProps) {
               <LanguageSelector />
             </div>
           )}
+
+          {/* Mobile Quick Actions */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+            <button
+              onClick={() => { setShowOnlineModal(true); setIsMobileMenuOpen(false); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                background: "rgba(16, 185, 129, 0.15)",
+                color: "#10B981",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
+                padding: "0.65rem",
+                borderRadius: "10px",
+                fontSize: "0.85rem",
+                fontWeight: "800",
+                justifyContent: "center"
+              }}
+            >
+              <span>🟢 {onlineCount} en línea</span>
+            </button>
+
+            <button
+              onClick={() => { toggleTimer(); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                background: isTimerEnabled ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.05)",
+                color: isTimerEnabled ? "#F59E0B" : "var(--color-text-muted)",
+                border: `1px solid ${isTimerEnabled ? "rgba(245, 158, 11, 0.4)" : "rgba(255,255,255,0.08)"}`,
+                padding: "0.65rem",
+                borderRadius: "10px",
+                fontSize: "0.85rem",
+                fontWeight: "800",
+                justifyContent: "center"
+              }}
+            >
+              <FaStopwatch /> <span>Timer: {isTimerEnabled ? "10s" : "OFF"}</span>
+            </button>
+          </div>
 
           {/* Navigation Links */}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -460,6 +502,9 @@ export default function Navbar({ user }: NavbarProps) {
           }
           .mobile-menu-btn {
             display: flex !important;
+          }
+          .header-badge-text {
+            display: none !important;
           }
         }
       `}</style>

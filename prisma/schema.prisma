@@ -133,11 +133,17 @@ model Challenge {
   challengerScore Int?     
   challengerTimeMs Int?    
   challengerDone  Boolean  @default(false)
+  challengerAccuracy Float?
+  challengerProgressJson String?
 
   // Challenged Results
   challengedScore Int?
   challengedTimeMs Int?
   challengedDone  Boolean  @default(false)
+  challengedAccuracy Float?
+  challengedProgressJson String?
+
+  firstCompletedAt DateTime?
 
   winnerId        String?  // userId or "DRAW"
 

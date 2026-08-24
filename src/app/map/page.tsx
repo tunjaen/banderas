@@ -52,7 +52,7 @@ function GlobalMapContent() {
             };
             newFeatures.push(palestineFeature);
 
-            // Add a small portion for Israel (small polygon within the region)
+            // Add a small portion for Israel
             const israelFeature = {
               type: "Feature",
               id: "ISR",
@@ -104,16 +104,28 @@ function GlobalMapContent() {
 
   const islandProgressList = Object.values(progress).filter((p: Progress) => p.country?.continent === "Islas");
   const isIslandExpert = islandProgressList.length > 0 && islandProgressList.every((p: Progress) => 
-    p.status === "Familiar" || p.status === "Dominado" || p.status === "FAMILIAR" || p.status === "MASTERED"
+    p.status === "Familiar" || p.status === "Dominado" || p.status === "Experto" || p.status === "MASTERED"
   );
 
   if (loading) return <div className="container flex justify-center items-center" style={{ minHeight: "100vh" }}>{t.map.loading}</div>;
 
+  // Legend & map color mapping matching Database statuses:
+  // DB "Dominado" / "Experto" / "MASTERED" -> Green #10b981 (Experto)
+  // DB "Familiar" / "FAMILIAR"               -> Amber #f59e0b (Dominado)
+  // DB "Aprendiendo" / "Aprendido"           -> Blue #3b82f6 (Aprendido)
+  // DB "Nuevo" / Unseen                      -> Slate #334155 (Por Descubrir)
   const getColor = (status: string) => {
-    if (status === "Dominado" || status === "MASTERED") return "#10b981";
-    if (status === "Familiar" || status === "FAMILIAR") return "#f59e0b";
-    if (status === "Aprendiendo" || status === "LEARNING") return "#3b82f6";
-    return "#334155";
+    if (status === "Experto" || status === "Dominado" || status === "MASTERED") return "#10b981"; // Green (Experto)
+    if (status === "Familiar" || status === "FAMILIAR") return "#f59e0b"; // Amber (Dominado)
+    if (status === "Aprendiendo" || status === "Aprendido" || status === "LEARNING") return "#3b82f6"; // Blue (Aprendido)
+    return "#334155"; // Slate (Por Descubrir)
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === "Experto" || status === "Dominado" || status === "MASTERED") return lang === 'en' ? "Expert" : "Experto";
+    if (status === "Familiar" || status === "FAMILIAR") return lang === 'en' ? "Dominated" : "Dominado";
+    if (status === "Aprendiendo" || status === "Aprendido" || status === "LEARNING") return lang === 'en' ? "Learned" : "Aprendido";
+    return lang === 'en' ? "Unseen" : "Por Descubrir";
   };
 
   const styleFeature = (feature: any) => {
@@ -123,7 +135,7 @@ function GlobalMapContent() {
       weight: 1,
       opacity: 1,
       color: "rgba(255,255,255,0.2)",
-      fillOpacity: 0.7
+      fillOpacity: 0.75
     };
   };
 
@@ -136,7 +148,7 @@ function GlobalMapContent() {
 
     layer.on({
       mouseover: (e: any) => { e.target.setStyle({ fillOpacity: 1, weight: 2 }); },
-      mouseout: (e: any) => { e.target.setStyle({ fillOpacity: 0.7, weight: 1 }); }
+      mouseout: (e: any) => { e.target.setStyle({ fillOpacity: 0.75, weight: 1 }); }
     });
 
     if (p) {
@@ -147,7 +159,7 @@ function GlobalMapContent() {
           <h3 style="font-weight:bold; margin-bottom:4px;">${lang === 'en' ? p.country.nameEn : p.country.name}</h3>
           <p style="margin:0; font-size:12px;">${t.quiz.capital}: ${lang === 'en' ? p.country.capitalEn : p.country.capital}</p>
           <hr style="margin:8px 0; border:0; border-top:1px solid #ccc;" />
-          <p style="margin:0; font-weight:bold; color:${getColor(p.status)};">${t.map[p.status === "Dominado" ? "mastered" : p.status === "Familiar" ? "familiar" : "learning"]}</p>
+          <p style="margin:0; font-weight:bold; color:${getColor(p.status)};">${getStatusLabel(p.status)}</p>
           <p style="margin:0; font-size:12px;">${t.map.accuracy}: ${accuracy}% (${p.correctAnswers} / ${p.correctAnswers + p.wrongAnswers})</p>
         </div>
       `);
@@ -155,7 +167,7 @@ function GlobalMapContent() {
       layer.bindPopup(`
         <div style="text-align:center; color: var(--color-surface);">
           <h3 style="font-weight:bold; margin-bottom:4px;">${name}</h3>
-          <p style="margin:0; color:#ef4444;">${t.map.notLearned}</p>
+          <p style="margin:0; color:#ef4444;">${lang === 'en' ? "Unseen" : "Por Descubrir"}</p>
         </div>
       `);
     }
@@ -163,52 +175,79 @@ function GlobalMapContent() {
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      <header className="flex justify-between items-center" style={{ padding: "1rem 2rem", background: "var(--color-surface)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "700", margin: 0 }}>{targetUserName ? `Mapa de ${targetUserName.split(" ")[0]}` : t.map.title}</h1>
+      {/* Responsive Header */}
+      <header 
+        style={{ 
+          padding: "0.85rem 1.25rem", 
+          background: "var(--color-surface)", 
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.75rem"
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <h1 style={{ fontSize: "1.25rem", fontWeight: "800", margin: 0, color: "#fff" }}>
+            {targetUserName ? `Mapa de ${targetUserName.split(" ")[0]}` : t.map.title}
+          </h1>
           {isIslandExpert && (
             <button
               onClick={() => setShowIslandModal(true)}
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.4rem",
+                gap: "0.3rem",
                 background: "linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))",
                 color: "#F59E0B",
                 border: "1px solid #F59E0B",
-                padding: "0.3rem 0.75rem",
+                padding: "0.25rem 0.6rem",
                 borderRadius: "var(--radius-full)",
-                fontSize: "0.85rem",
+                fontSize: "0.75rem",
                 fontWeight: "800",
-                cursor: "pointer",
-                boxShadow: "0 2px 10px rgba(245, 158, 11, 0.3)"
+                cursor: "pointer"
               }}
             >
               <span>🏴‍☠️</span>
-              <span>Experto en Islas</span>
+              <span>Islas</span>
             </button>
           )}
         </div>
-        <div className="flex gap-4 items-center">
-          <div className="flex items-center gap-2" style={{ fontSize: "0.875rem" }}>
-            <span style={{ width: "12px", height: "12px", background: "#334155", borderRadius: "2px" }}></span> {t.map.notLearned}
+
+        {/* Legend: Por Descubrir -> Aprendido -> Dominado -> Experto */}
+        <div style={{ display: "flex", flexWrap: "wrap", itemsAlign: "center", gap: "0.6rem 1rem", fontSize: "0.8rem", fontWeight: "700" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "10px", height: "10px", background: "#334155", borderRadius: "3px" }}></span>
+            <span style={{ color: "var(--color-text-muted)" }}>{lang === 'en' ? "Unseen" : "Por Descubrir"}</span>
           </div>
-          <div className="flex items-center gap-2" style={{ fontSize: "0.875rem" }}>
-            <span style={{ width: "12px", height: "12px", background: "#3b82f6", borderRadius: "2px" }}></span> {t.map.learning}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "10px", height: "10px", background: "#3b82f6", borderRadius: "3px" }}></span>
+            <span style={{ color: "#60A5FA" }}>{lang === 'en' ? "Learned" : "Aprendido"}</span>
           </div>
-          <div className="flex items-center gap-2" style={{ fontSize: "0.875rem" }}>
-            <span style={{ width: "12px", height: "12px", background: "#f59e0b", borderRadius: "2px" }}></span> {t.map.familiar}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "10px", height: "10px", background: "#f59e0b", borderRadius: "3px" }}></span>
+            <span style={{ color: "#F59E0B" }}>{lang === 'en' ? "Dominated" : "Dominado"}</span>
           </div>
-          <div className="flex items-center gap-2" style={{ fontSize: "0.875rem" }}>
-            <span style={{ width: "12px", height: "12px", background: "#10b981", borderRadius: "2px" }}></span> {t.map.mastered}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "10px", height: "10px", background: "#10b981", borderRadius: "3px" }}></span>
+            <span style={{ color: "#10B981" }}>{lang === 'en' ? "Expert" : "Experto"}</span>
           </div>
-          <button onClick={() => userId ? router.back() : router.push("/dashboard")} className="btn btn-outline" style={{ padding: "0.5rem 1rem", marginLeft: "1rem" }}>{t.map.backBtn}</button>
+          
+          <button 
+            onClick={() => userId ? router.back() : router.push("/dashboard")} 
+            className="btn btn-outline" 
+            style={{ padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
+          >
+            {t.map.backBtn}
+          </button>
         </div>
       </header>
 
+      {/* Map Body */}
       <div style={{ flex: 1, position: "relative" }}>
         {geoData && (
-          <MapContainer center={[20, 0]} zoom={3} style={{ height: "100%", width: "100%" }}>
+          <MapContainer center={[20, 0]} zoom={2.5} style={{ height: "100%", width: "100%" }}>
             <GeoJSON 
               data={geoData} 
               style={styleFeature}

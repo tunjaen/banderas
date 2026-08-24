@@ -37,7 +37,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const challenge = await prisma.challenge.findUnique({
+    let challenge = await prisma.challenge.findUnique({
       where: { id },
       include: {
         challenger: { select: { id: true, name: true, level: true, xp: true } },
@@ -49,6 +49,86 @@ export async function GET(
       return NextResponse.json({ message: "Reto no encontrado" }, { status: 404 });
     }
 
+    // Check expiration conditions for Domination challenges
+    const now = Date.now();
+    const createdAtTime = new Date(challenge.createdAt).getTime();
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    const expiresAtMs = createdAtTime + threeDaysMs;
+
+    const isThreeDaysExpired = now >= expiresAtMs;
+    
+    // Also check if 24 hours passed after first player completion
+    let is24hAfterFirstCompletedExpired = false;
+    if (challenge.firstCompletedAt) {
+      const firstCompletedTime = new Date(challenge.firstCompletedAt).getTime();
+      if ((now - firstCompletedTime) >= 24 * 60 * 60 * 1000) {
+        is24hAfterFirstCompletedExpired = true;
+      }
+    }
+
+    if ((isThreeDaysExpired || is24hAfterFirstCompletedExpired) && challenge.status !== "COMPLETED") {
+      let cAcc = challenge.challengerAccuracy || 0;
+      let rAcc = challenge.challengedAccuracy || 0;
+
+      // Calculate accuracy from progress JSON if available
+      try {
+        if (challenge.challengerProgressJson) {
+          const cData = JSON.parse(challenge.challengerProgressJson);
+          const total = (cData.correctCount || 0) + (cData.wrongCount || 0);
+          if (total > 0) cAcc = (cData.correctCount / total) * 100;
+        }
+        if (challenge.challengedProgressJson) {
+          const rData = JSON.parse(challenge.challengedProgressJson);
+          const total = (rData.correctCount || 0) + (rData.wrongCount || 0);
+          if (total > 0) rAcc = (rData.correctCount / total) * 100;
+        }
+      } catch (e) {}
+
+      let winnerId: string | null = null;
+      
+      // Rule: When 3 days pass and neither player finished, winner is decided by HIGHEST ACCURACY % (porcentaje de acierto)
+      if (cAcc > rAcc) {
+        winnerId = challenge.challengerId;
+      } else if (rAcc > cAcc) {
+        winnerId = challenge.challengedId;
+      } else {
+        // Tie breaker by dominated countries count if accuracy % is tied
+        const cDom = challenge.challengerScore || 0;
+        const rDom = challenge.challengedScore || 0;
+        if (cDom > rDom) winnerId = challenge.challengerId;
+        else if (rDom > cDom) winnerId = challenge.challengedId;
+        else winnerId = "DRAW";
+      }
+
+      const loserId = winnerId === "DRAW" ? null : (winnerId === challenge.challengerId ? challenge.challengedId : challenge.challengerId);
+
+      if (winnerId === "DRAW") {
+        await prisma.user.update({ where: { id: challenge.challengerId }, data: { xp: { increment: 15 }, duelsDrawn: { increment: 1 }, duelsTotal: { increment: 1 } } });
+        await prisma.user.update({ where: { id: challenge.challengedId }, data: { xp: { increment: 15 }, duelsDrawn: { increment: 1 }, duelsTotal: { increment: 1 } } });
+      } else if (winnerId) {
+        await prisma.user.update({ where: { id: winnerId }, data: { xp: { increment: 25 }, duelsWon: { increment: 1 }, duelsTotal: { increment: 1 } } });
+        if (loserId) {
+          await prisma.user.update({ where: { id: loserId }, data: { xp: { increment: 10 }, duelsLost: { increment: 1 }, duelsTotal: { increment: 1 } } });
+        }
+      }
+
+      challenge = await prisma.challenge.update({
+        where: { id },
+        data: {
+          winnerId,
+          status: "COMPLETED",
+          challengerDone: true,
+          challengedDone: true,
+          challengerAccuracy: cAcc,
+          challengedAccuracy: rAcc
+        },
+        include: {
+          challenger: { select: { id: true, name: true, level: true, xp: true } },
+          challenged: { select: { id: true, name: true, level: true, xp: true } }
+        }
+      });
+    }
+
     // Parse pre-generated flag ISO sequence
     let isoList: string[] = [];
     try {
@@ -57,14 +137,13 @@ export async function GET(
       isoList = challenge.flagSequence.split(",");
     }
 
-    // Fetch details of countries in the exact sequence order
+    // Fetch details of countries in sequence
     const rawCountries = await prisma.country.findMany({
       where: { id: { in: isoList } }
     });
 
-    // Map back to maintain exact isoList sequence
     const countriesMap = new Map(rawCountries.map(c => [c.id, c]));
-    const orderedCountries = isoList.map(iso => countriesMap.get(iso)).filter(Boolean);
+    let orderedCountries = isoList.map(iso => countriesMap.get(iso)).filter(Boolean);
 
     // Build candidate distractor pool based on scopeValues
     const items = challenge.scopeValues.split(",").map((s: string) => s.trim());
@@ -111,19 +190,40 @@ export async function GET(
       })
     ]);
 
-    const questions = orderedCountries.map(c => {
+    // In DOMINATION mode, filter remaining un-dominated countries for the current user's session
+    let targetCountriesToAsk = orderedCountries;
+
+    if (challenge.gameMode === "DOMINATION") {
+      const userProgressJson = challenge.challengerId === userId ? challenge.challengerProgressJson : challenge.challengedProgressJson;
+      let userHits: Record<string, number> = {};
+      try {
+        if (userProgressJson) {
+          const parsed = JSON.parse(userProgressJson);
+          userHits = parsed.hits || {};
+        }
+      } catch (e) {}
+
+      // Keep countries that user has NOT dominated yet (< 3 hits)
+      const undominated = orderedCountries.filter(c => c && (userHits[c.id] || 0) < 3);
+
+      if (undominated.length > 0) {
+        // Shuffle undominated countries to create a dynamic session round (take up to 15 questions per session)
+        targetCountriesToAsk = [...undominated].sort(() => Math.random() - 0.5);
+      } else {
+        targetCountriesToAsk = [];
+      }
+    }
+
+    const questions = targetCountriesToAsk.map(c => {
       if (!c) return null;
 
-      // 1. Try picking distractors from same block
       let pool = blockPool.filter(ac => ac.id !== c.id);
 
-      // 2. If block pool has fewer than 3 distractors, supplement from same continent
       if (pool.length < 3) {
         const contPool = allCountries.filter(ac => ac.id !== c.id && ac.continent === c.continent && !pool.some(p => p.id === ac.id));
         pool = [...pool, ...contPool];
       }
 
-      // 3. Fallback to all countries if still fewer than 3
       if (pool.length < 3) {
         const remaining = allCountries.filter(ac => ac.id !== c.id && !pool.some(p => p.id === ac.id));
         pool = [...pool, ...remaining];
@@ -140,7 +240,13 @@ export async function GET(
 
     return NextResponse.json({
       challenge,
-      questions
+      questions,
+      allTerritoryCountries: orderedCountries.map(c => ({
+        id: c?.id,
+        name: c?.name,
+        nameEn: c?.nameEn,
+        isoCode: c?.isoCode
+      }))
     });
   } catch (error) {
     console.error("Error fetching single challenge:", error);

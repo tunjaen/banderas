@@ -150,8 +150,10 @@ export async function POST(req: Request) {
     const shuffled = [...countries].sort(() => Math.random() - 0.5);
     
     // Select flag count sequence
-    const countToTake = gameMode === "MARATHON" ? shuffled.length : Math.min(targetScore, shuffled.length);
+    const countToTake = (gameMode === "MARATHON" || gameMode === "DOMINATION") ? shuffled.length : Math.min(targetScore, shuffled.length);
     const selectedISOs = shuffled.slice(0, countToTake).map(c => c.id);
+
+    const initialProgressJson = JSON.stringify({ hits: {}, correctCount: 0, wrongCount: 0 });
 
     // Create Challenge record
     const challenge = await prisma.challenge.create({
@@ -163,6 +165,8 @@ export async function POST(req: Request) {
         scopeValues,
         targetScore: countToTake,
         flagSequence: JSON.stringify(selectedISOs),
+        challengerProgressJson: initialProgressJson,
+        challengedProgressJson: initialProgressJson,
         status: "PENDING"
       },
       include: {
