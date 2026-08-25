@@ -339,13 +339,13 @@ export default function DashboardClient({
               )}
             </div>
 
-            {/* Mis Duelos 1v1 Activos y Pendientes */}
+            {/* Seccion Principal: Mis Duelos 1v1 */}
             <div style={{ marginBottom: "2rem" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <SwordsIcon size={20} style={{ color: "#EF4444" }} />
+                  <SwordsIcon size={22} style={{ color: "#EF4444" }} />
                   <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
-                    Mis Duelos 1v1 ({challengesData?.active?.length || 0})
+                    Mis Duelos 1v1
                   </h2>
                 </div>
                 <button
@@ -357,85 +357,194 @@ export default function DashboardClient({
                 </button>
               </div>
 
-              {challengesData?.active && challengesData.active.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  {challengesData.active.map((ch: any) => {
-                    const isMyTurn = (ch.challengerId === user.id && !ch.challengerDone) || (ch.challengedId === user.id && !ch.challengedDone);
-                    const rivalName = ch.challengerId === user.id ? ch.challenged.name : ch.challenger.name;
+              {/* 1. Duelos Pendientes de Respuesta (Recibidos) */}
+              {challengesData?.pending && challengesData.pending.length > 0 && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem" }}>
+                    <span style={{ fontSize: "1.1rem" }}>📩</span>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#60A5FA" }}>
+                      Duelos Pendientes de Respuesta ({challengesData.pending.length})
+                    </h3>
+                  </div>
 
-                    const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
-                    const remainingMs = Math.max(0, expiresAtMs - Date.now());
-                    const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
-                    const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    {challengesData.pending.map((ch: any) => {
+                      const rivalName = ch.challenger?.name || "Jugador";
 
-                    return (
-                      <div
-                        key={ch.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          background: isMyTurn ? "rgba(239, 68, 68, 0.1)" : "rgba(255,255,255,0.03)",
-                          border: `1px solid ${isMyTurn ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.08)"}`,
-                          padding: "1rem 1.25rem",
-                          borderRadius: "14px",
-                          gap: "1rem",
-                          flexWrap: "wrap"
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
-                              VS {rivalName || "Jugador"}
-                            </span>
-                            <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago (10s)" : "👑 Dominación (3 Días)"}
-                            </span>
-                            {ch.gameMode === "DOMINATION" && (
-                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                                ⏳ Quedan {daysLeft}d {hoursLeft}h
+                      const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
+                      const remainingMs = Math.max(0, expiresAtMs - Date.now());
+                      const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+                      const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                      return (
+                        <div
+                          key={ch.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            background: "rgba(59, 130, 246, 0.08)",
+                            border: "1px solid rgba(59, 130, 246, 0.3)",
+                            padding: "1rem 1.25rem",
+                            borderRadius: "14px",
+                            gap: "1rem",
+                            flexWrap: "wrap"
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                                VS {rivalName}
                               </span>
-                            )}
+                              <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.15rem 0.6rem", borderRadius: "10px" }}>
+                                📩 ¡Te ha desafiado!
+                              </span>
+                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                                {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación (3 Días)"}
+                              </span>
+                              {ch.gameMode === "DOMINATION" && (
+                                <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(255, 255, 255, 0.08)", color: "var(--color-text-muted)", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                                  ⏳ Quedan {daysLeft}d {hoursLeft}h
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                              Territorio: {ch.scopeValues} • {ch.targetScore} Banderas
+                            </div>
                           </div>
-                          <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
-                            Territorio: {ch.scopeValues} • {ch.targetScore} Banderas
-                          </div>
-                        </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <Link
-                            href={`/learn/challenge/${ch.id}`}
-                            className="btn btn-primary"
-                            style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: isMyTurn ? "#EF4444" : "#3B82F6" }}
-                          >
-                            {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
-                          </Link>
-                          <button
-                            onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName: rivalName || "Jugador" })}
-                            title="Rechazar duelo"
-                            className="btn btn-outline"
-                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
-                          >
-                            🚫 Rechazar
-                          </button>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <Link
+                              href={`/learn/challenge/${ch.id}`}
+                              className="btn btn-primary"
+                              style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: "#10B981", borderColor: "#10B981" }}
+                            >
+                              ⚔️ ¡Aceptar y Jugar!
+                            </Link>
+                            <button
+                              onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName })}
+                              title="Rechazar duelo"
+                              className="btn btn-outline"
+                              style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
+                            >
+                              🚫 Rechazar
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : (
-                <div style={{ textAlign: "center", padding: "1.5rem 1rem", background: "rgba(255,255,255,0.02)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem", margin: "0 0 0.85rem" }}>
-                    No tienes duelos activos en este momento. ¡Lanza un desafío para competir en tiempo real!
-                  </p>
-                  <button
-                    onClick={() => setShowCreateChallenge(true)}
-                    className="btn btn-primary"
-                    style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800" }}
-                  >
-                    + Nuevo Duelo 1v1
-                  </button>
+              )}
+
+              {/* 2. Duelos Comenzados / En Curso */}
+              {challengesData?.active && challengesData.active.length > 0 && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem" }}>
+                    <span style={{ fontSize: "1.1rem" }}>⚔️</span>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#fff" }}>
+                      Duelos Comenzados / En Curso ({challengesData.active.length})
+                    </h3>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    {challengesData.active.map((ch: any) => {
+                      const isMyTurn = (ch.challengerId === user.id && !ch.challengerDone) || (ch.challengedId === user.id && !ch.challengedDone);
+                      const isChallenger = ch.challengerId === user.id;
+                      const rivalName = isChallenger ? ch.challenged?.name : ch.challenger?.name;
+
+                      const myDom = isChallenger ? (ch.challengerDominatedCount ?? ch.challengerScore ?? 0) : (ch.challengedDominatedCount ?? ch.challengedScore ?? 0);
+                      const rivalDom = isChallenger ? (ch.challengedDominatedCount ?? ch.challengedScore ?? 0) : (ch.challengerDominatedCount ?? ch.challengerScore ?? 0);
+
+                      const total = ch.totalTerritoryCount || ch.targetScore || 1;
+                      const myPct = isChallenger ? (ch.challengerTerritoryPct ?? Math.round((myDom / total) * 100)) : (ch.challengedTerritoryPct ?? Math.round((myDom / total) * 100));
+                      const rivalPct = isChallenger ? (ch.challengedTerritoryPct ?? Math.round((rivalDom / total) * 100)) : (ch.challengerTerritoryPct ?? Math.round((rivalDom / total) * 100));
+
+                      const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
+                      const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
+                      const myDone = isChallenger ? ch.challengerDone : ch.challengedDone;
+                      const rivalDone = isChallenger ? ch.challengedDone : ch.challengedDone;
+
+                      const formatAcc = (acc: number | null | undefined, done: boolean) => {
+                        if (acc !== null && acc !== undefined) return `${Math.round(acc)}% acierto`;
+                        if (!done) return "Sin jugar";
+                        return "0% acierto";
+                      };
+
+                      const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
+                      const remainingMs = Math.max(0, expiresAtMs - Date.now());
+                      const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+                      const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                      return (
+                        <div
+                          key={ch.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            background: isMyTurn ? "rgba(239, 68, 68, 0.1)" : "rgba(255,255,255,0.03)",
+                            border: `1px solid ${isMyTurn ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.08)"}`,
+                            padding: "1rem 1.25rem",
+                            borderRadius: "14px",
+                            gap: "1rem",
+                            flexWrap: "wrap"
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                                VS {rivalName || "Jugador"}
+                              </span>
+                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                                {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación (3 Días)"}
+                              </span>
+                              {ch.gameMode === "DOMINATION" && (
+                                <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                                  ⏳ Quedan {daysLeft}d {hoursLeft}h
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", marginTop: "0.4rem", display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                              <div>
+                                👑 <strong>Tu progreso:</strong> <span style={{ color: "#10B981", fontWeight: "700" }}>{myDom}/{total} países ({myPct}% territorio)</span> • {formatAcc(myAcc, myDone)}
+                              </div>
+                              <div>
+                                ⚔️ <strong>{rivalName}:</strong> <span style={{ color: "#60A5FA", fontWeight: "700" }}>{rivalDom}/{total} países ({rivalPct}% territorio)</span> • {formatAcc(rivalAcc, rivalDone)}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <Link
+                              href={`/learn/challenge/${ch.id}`}
+                              className="btn btn-primary"
+                              style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: isMyTurn ? "#EF4444" : "#3B82F6" }}
+                            >
+                              {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
+                            </Link>
+                            <button
+                              onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName: rivalName || "Jugador" })}
+                              title="Rechazar duelo"
+                              className="btn btn-outline"
+                              style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
+                            >
+                              🚫 Rechazar
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+              )}
+
+              {/* Si no hay pendientes ni activos */}
+              {(!challengesData?.pending || challengesData.pending.length === 0) &&
+               (!challengesData?.active || challengesData.active.length === 0) && (
+                <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem", margin: 0, fontStyle: "italic" }}>
+                  No tienes duelos pendientes ni en curso en este momento.
+                </p>
               )}
             </div>
 

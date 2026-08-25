@@ -135,7 +135,7 @@ export async function GET() {
     );
 
     const active = formattedChallenges.filter(
-      c => c.status !== "DECLINED" && c.status !== "COMPLETED" && !(c.challengerDone && c.challengedDone)
+      c => c.status !== "DECLINED" && c.status !== "COMPLETED" && !(c.challengerDone && c.challengedDone) && !(c.challengedId === userId && c.status === "PENDING" && !c.challengedDone)
     );
 
     const completed = formattedChallenges.filter(
@@ -145,6 +145,7 @@ export async function GET() {
     return NextResponse.json({
       pendingCount: pendingReceived.length,
       challenges: formattedChallenges,
+      pending: pendingReceived,
       active,
       completed
     });
