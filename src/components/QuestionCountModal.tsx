@@ -1,7 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/lib/LanguageContext";
-import { FaTimes, FaBolt, FaFire, FaCrown, FaCheck } from "react-icons/fa";
+import { FaTimes, FaBolt, FaFire, FaCrown } from "react-icons/fa";
 
 interface QuestionCountModalProps {
   onSelect: (limit: number) => void;
@@ -18,41 +18,39 @@ export default function QuestionCountModal({
 }: QuestionCountModalProps) {
   const { lang } = useLanguage();
 
+  const isEn = lang === "en";
+
   const options = [
     {
       limit: 10,
-      icon: <FaBolt style={{ color: "#10B981" }} size={22} />,
-      title: lang === "en" ? "10 Questions" : "10 Preguntas",
-      badge: lang === "en" ? "Quick Round" : "Ronda Rápida",
-      badgeBg: "rgba(16, 185, 129, 0.15)",
-      badgeColor: "#10B981",
+      icon: <FaBolt style={{ color: "#10B981" }} size={24} />,
+      label: "10",
+      bg: "rgba(16, 185, 129, 0.12)",
+      color: "#10B981",
       borderColor: "rgba(16, 185, 129, 0.3)",
-      hoverBorder: "#10B981",
-      desc: lang === "en" ? "Ideal for quick practice (~2 min)" : "Ideal para prácticas rápidas (~2 min)"
+      hoverBorder: "#10B981"
     },
     {
       limit: 25,
-      icon: <FaFire style={{ color: "#F59E0B" }} size={22} />,
-      title: lang === "en" ? "25 Questions" : "25 Preguntas",
-      badge: lang === "en" ? "Standard Round" : "Ronda Estándar",
-      badgeBg: "rgba(245, 158, 11, 0.15)",
-      badgeColor: "#F59E0B",
+      icon: <FaFire style={{ color: "#F59E0B" }} size={24} />,
+      label: "25",
+      bg: "rgba(245, 158, 11, 0.12)",
+      color: "#F59E0B",
       borderColor: "rgba(245, 158, 11, 0.3)",
-      hoverBorder: "#F59E0B",
-      desc: lang === "en" ? "Balanced mastery (~5 min)" : "Equilibrado para dominar territorio (~5 min)"
+      hoverBorder: "#F59E0B"
     },
     {
       limit: 50,
-      icon: <FaCrown style={{ color: "#60A5FA" }} size={22} />,
-      title: lang === "en" ? "50 Questions" : "50 Preguntas",
-      badge: lang === "en" ? "Full Challenge" : "Desafío Total",
-      badgeBg: "rgba(59, 130, 246, 0.15)",
-      badgeColor: "#60A5FA",
+      icon: <FaCrown style={{ color: "#60A5FA" }} size={24} />,
+      label: "50",
+      bg: "rgba(59, 130, 246, 0.12)",
+      color: "#60A5FA",
       borderColor: "rgba(59, 130, 246, 0.3)",
-      hoverBorder: "#60A5FA",
-      desc: lang === "en" ? "Maximum domination challenge (~10 min)" : "Máxima dominación y experiencia (~10 min)"
+      hoverBorder: "#60A5FA"
     }
   ];
+
+  const modalTitle = title || (isEn ? "Select the number of questions in this round" : "Selecciona el número de preguntas en esta ronda");
 
   return (
     <div
@@ -80,11 +78,12 @@ export default function QuestionCountModal({
           background: "linear-gradient(145deg, #1e293b, #0f172a)",
           border: "1px solid rgba(255, 255, 255, 0.12)",
           borderRadius: "20px",
-          padding: "1.75rem 1.25rem",
-          maxWidth: "480px",
+          padding: "1.75rem 1.25rem 1.5rem",
+          maxWidth: "420px",
           width: "100%",
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)",
-          position: "relative"
+          position: "relative",
+          textAlign: "center"
         }}
       >
         {/* Close Button */}
@@ -92,7 +91,7 @@ export default function QuestionCountModal({
           onClick={onClose}
           style={{
             position: "absolute",
-            top: "1.25rem",
+            top: "1rem",
             right: "1.25rem",
             background: "rgba(255, 255, 255, 0.08)",
             border: "none",
@@ -110,101 +109,58 @@ export default function QuestionCountModal({
           <FaTimes size={14} />
         </button>
 
-        {/* Modal Header */}
-        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <div style={{ fontSize: "2.25rem", marginBottom: "0.4rem" }}>🎯</div>
-          <h2 style={{ fontSize: "1.35rem", fontWeight: "900", color: "#fff", margin: 0 }}>
-            {title || (lang === "en" ? "Choose Round Duration" : "¿Cuántas preguntas en esta ronda?")}
+        {/* Title & Subtitle */}
+        <div style={{ marginBottom: "1.5rem", paddingRight: "1rem", paddingLeft: "1rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: "800", color: "#fff", margin: 0, lineHeight: "1.35" }}>
+            {modalTitle}
           </h2>
           {subtitle && (
-            <p style={{ fontSize: "0.85rem", color: "#A7F432", fontWeight: "700", marginTop: "0.35rem", margin: "0.35rem 0 0" }}>
+            <span style={{ fontSize: "0.85rem", color: "#A7F432", fontWeight: "700", display: "inline-block", marginTop: "0.4rem" }}>
               {subtitle}
-            </p>
+            </span>
           )}
-          <p style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
-            {lang === "en" ? "Select the number of questions for this session" : "Selecciona el número de preguntas para tu sesión de Conquista"}
-          </p>
         </div>
 
-        {/* Options List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+        {/* 3 Square / Compact Buttons in 1 Row */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "0.75rem",
+            width: "100%"
+          }}
+        >
           {options.map(opt => (
             <button
               key={opt.limit}
               onClick={() => onSelect(opt.limit)}
               style={{
-                width: "100%",
-                minHeight: "68px",
-                padding: "0.9rem 1.1rem",
-                borderRadius: "14px",
-                background: "rgba(255, 255, 255, 0.03)",
-                border: `2px solid ${opt.borderColor}`,
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "space-between",
-                gap: "0.85rem",
+                justifyContent: "center",
+                gap: "0.4rem",
+                aspectRatio: "1 / 1",
+                padding: "0.75rem 0.5rem",
+                borderRadius: "16px",
+                background: opt.bg,
+                border: `2px solid ${opt.borderColor}`,
                 cursor: "pointer",
-                textAlign: "left",
-                transition: "all 0.2s ease-in-out",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                transition: "all 0.2s ease-in-out"
               }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = opt.hoverBorder)}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = opt.borderColor)}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = opt.hoverBorder;
+                e.currentTarget.style.transform = "translateY(-3px)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = opt.borderColor;
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                <div
-                  style={{
-                    width: "44px",
-                    height: "44px",
-                    borderRadius: "12px",
-                    background: opt.badgeBg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0
-                  }}
-                >
-                  {opt.icon}
-                </div>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "1.1rem", fontWeight: "900", color: "#fff" }}>
-                      {opt.title}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "0.7rem",
-                        fontWeight: "800",
-                        color: opt.badgeColor,
-                        background: opt.badgeBg,
-                        padding: "0.1rem 0.5rem",
-                        borderRadius: "10px"
-                      }}
-                    >
-                      {opt.badge}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: "0.775rem", color: "var(--color-text-muted)", marginTop: "0.15rem", display: "block" }}>
-                    {opt.desc}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "50%",
-                  background: opt.badgeBg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: opt.badgeColor,
-                  flexShrink: 0
-                }}
-              >
-                <FaCheck size={12} />
-              </div>
+              {opt.icon}
+              <span style={{ fontSize: "1.35rem", fontWeight: "900", color: "#fff" }}>
+                {opt.label}
+              </span>
             </button>
           ))}
         </div>
