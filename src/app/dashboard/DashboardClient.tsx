@@ -424,15 +424,22 @@ export default function DashboardClient({
                     const isWinner = ch.winnerId === user.id;
                     const isDraw = ch.winnerId === "DRAW";
                     
+                    const myDom = isChallenger ? (ch.challengerDominatedCount ?? ch.challengerScore ?? 0) : (ch.challengedDominatedCount ?? ch.challengedScore ?? 0);
+                    const rivalDom = isChallenger ? (ch.challengedDominatedCount ?? ch.challengedScore ?? 0) : (ch.challengerDominatedCount ?? ch.challengerScore ?? 0);
+
+                    const total = ch.totalTerritoryCount || ch.targetScore || 1;
+                    const myPct = isChallenger ? (ch.challengerTerritoryPct ?? Math.round((myDom / total) * 100)) : (ch.challengedTerritoryPct ?? Math.round((myDom / total) * 100));
+                    const rivalPct = isChallenger ? (ch.challengedTerritoryPct ?? Math.round((rivalDom / total) * 100)) : (ch.challengerTerritoryPct ?? Math.round((rivalDom / total) * 100));
+
                     const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
                     const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
                     const myDone = isChallenger ? ch.challengerDone : ch.challengedDone;
                     const rivalDone = isChallenger ? ch.challengedDone : ch.challengerDone;
 
                     const formatAcc = (acc: number | null | undefined, done: boolean) => {
-                      if (acc !== null && acc !== undefined) return `${Math.round(acc)}%`;
+                      if (acc !== null && acc !== undefined) return `${Math.round(acc)}% acierto`;
                       if (!done) return "Sin jugar";
-                      return "0%";
+                      return "0% acierto";
                     };
 
                     let resultBadge = "🤝 Empate";
@@ -476,8 +483,13 @@ export default function DashboardClient({
                               {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación"}
                             </span>
                           </div>
-                          <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.3rem" }}>
-                            Tu precisión: <strong style={{ color: "#fff" }}>{formatAcc(myAcc, myDone)}</strong> • Oponente: <strong style={{ color: "#fff" }}>{formatAcc(rivalAcc, rivalDone)}</strong>
+                          <div style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", marginTop: "0.4rem", display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                            <div>
+                              👑 <strong>Tu progreso:</strong> <span style={{ color: "#10B981", fontWeight: "700" }}>{myDom}/{total} países ({myPct}% territorio)</span> • {formatAcc(myAcc, myDone)}
+                            </div>
+                            <div>
+                              ⚔️ <strong>{rivalName}:</strong> <span style={{ color: "#60A5FA", fontWeight: "700" }}>{rivalDom}/{total} países ({rivalPct}% territorio)</span> • {formatAcc(rivalAcc, rivalDone)}
+                            </div>
                           </div>
                         </div>
 

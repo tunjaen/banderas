@@ -61,35 +61,70 @@ export async function GET() {
     const formattedChallenges = userChallenges.map(c => {
       let cAcc = c.challengerAccuracy;
       let rAcc = c.challengedAccuracy;
+      let cDominated = c.challengerScore || 0;
+      let rDominated = c.challengedScore || 0;
+
+      let isoList: string[] = [];
+      try { isoList = JSON.parse(c.flagSequence); } catch (e) {}
+      const totalTerritoryCount = isoList.length || c.targetScore || 1;
 
       if (c.gameMode === "LIGHTNING") {
-        if (cAcc === null && c.challengerDone && c.challengerScore !== null) {
-          const targetCount = c.targetScore || 1;
-          cAcc = Math.min(100, Math.max(0, (c.challengerScore / targetCount) * 100));
+        if (c.challengerDone && c.challengerScore !== null) {
+          cAcc = Math.min(100, Math.max(0, (c.challengerScore / totalTerritoryCount) * 100));
+        } else {
+          cAcc = null;
         }
-        if (rAcc === null && c.challengedDone && c.challengedScore !== null) {
-          const targetCount = c.targetScore || 1;
-          rAcc = Math.min(100, Math.max(0, (c.challengedScore / targetCount) * 100));
+
+        if (c.challengedDone && c.challengedScore !== null) {
+          rAcc = Math.min(100, Math.max(0, (c.challengedScore / totalTerritoryCount) * 100));
+        } else {
+          rAcc = null;
         }
       } else if (c.gameMode === "DOMINATION") {
-        if (cAcc === null && c.challengerProgressJson) {
+        let cTotalAttempts = 0;
+        let rTotalAttempts = 0;
+
+        if (c.challengerProgressJson) {
           try {
             const cData = JSON.parse(c.challengerProgressJson);
-            const total = (cData.correctCount || 0) + (cData.wrongCount || 0);
-            if (total > 0) cAcc = (cData.correctCount / total) * 100;
+            cTotalAttempts = (cData.correctCount || 0) + (cData.wrongCount || 0);
+            cDominated = cData.dominatedCount ?? (cData.hits ? Object.keys(cData.hits).filter(k => cData.hits[k] >= 3).length : cDominated);
+            if (cTotalAttempts > 0) {
+              cAcc = (cData.correctCount / cTotalAttempts) * 100;
+            } else {
+              cAcc = null;
+            }
           } catch (e) {}
+        } else {
+          cAcc = null;
         }
-        if (rAcc === null && c.challengedProgressJson) {
+
+        if (c.challengedProgressJson) {
           try {
             const rData = JSON.parse(c.challengedProgressJson);
-            const total = (rData.correctCount || 0) + (rData.wrongCount || 0);
-            if (total > 0) rAcc = (rData.correctCount / total) * 100;
+            rTotalAttempts = (rData.correctCount || 0) + (rData.wrongCount || 0);
+            rDominated = rData.dominatedCount ?? (rData.hits ? Object.keys(rData.hits).filter(k => rData.hits[k] >= 3).length : rDominated);
+            if (rTotalAttempts > 0) {
+              rAcc = (rData.correctCount / rTotalAttempts) * 100;
+            } else {
+              rAcc = null;
+            }
           } catch (e) {}
+        } else {
+          rAcc = null;
         }
       }
 
+      const cTerritoryPct = Math.min(100, Math.round((cDominated / totalTerritoryCount) * 100));
+      const rTerritoryPct = Math.min(100, Math.round((rDominated / totalTerritoryCount) * 100));
+
       return {
         ...c,
+        totalTerritoryCount,
+        challengerDominatedCount: cDominated,
+        challengedDominatedCount: rDominated,
+        challengerTerritoryPct: cTerritoryPct,
+        challengedTerritoryPct: rTerritoryPct,
         challengerAccuracy: cAcc,
         challengedAccuracy: rAcc
       };
