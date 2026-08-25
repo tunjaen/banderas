@@ -244,6 +244,21 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handlePlayAnotherRound = () => {
+    setIsGameOver(false);
+    setGameResult(null);
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setScore(0);
+    setMyCorrectCount(0);
+    setMyWrongCount(0);
+    recentAnswersRef.current = [];
+    hasLoadedQuestionsRef.current = false;
+    setQuestions([]);
+    setLoading(true);
+    loadChallengeData();
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -579,9 +594,32 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            <Link href="/dashboard" className="btn btn-primary" style={{ width: "100%", padding: "0.85rem", fontSize: "1rem" }}>
-              Volver al Inicio <FaArrowRight style={{ marginLeft: "0.4rem" }} />
-            </Link>
+            {(() => {
+              const myDominatedCount = Object.values(myHits).filter(h => h >= 3).length;
+              const hasRemainingTerritory = totalTerritoryCount > 0 && myDominatedCount < totalTerritoryCount;
+              const canPlayAnother = isDomination && hasRemainingTerritory && !gameResult?.isFinished;
+
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: canPlayAnother ? "1fr 1fr" : "1fr", gap: "0.75rem", marginTop: "1rem" }}>
+                  {canPlayAnother && (
+                    <button
+                      onClick={handlePlayAnotherRound}
+                      className="btn btn-primary"
+                      style={{ padding: "0.85rem", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+                    >
+                      <SwordsIcon /> <span>Jugar Otra Ronda</span>
+                    </button>
+                  )}
+                  <Link
+                    href="/dashboard"
+                    className={canPlayAnother ? "btn btn-outline" : "btn btn-primary"}
+                    style={{ padding: "0.85rem", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+                  >
+                    <span>Volver al Inicio</span> <FaArrowRight />
+                  </Link>
+                </div>
+              );
+            })()}
 
           </div>
         )}
