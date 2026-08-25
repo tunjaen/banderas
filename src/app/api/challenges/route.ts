@@ -58,21 +58,58 @@ export async function GET() {
       return true;
     });
 
-    const pendingReceived = userChallenges.filter(
+    const formattedChallenges = userChallenges.map(c => {
+      let cAcc = c.challengerAccuracy;
+      let rAcc = c.challengedAccuracy;
+
+      if (c.gameMode === "LIGHTNING") {
+        if (cAcc === null && c.challengerDone && c.challengerScore !== null) {
+          const targetCount = c.targetScore || 1;
+          cAcc = Math.min(100, Math.max(0, (c.challengerScore / targetCount) * 100));
+        }
+        if (rAcc === null && c.challengedDone && c.challengedScore !== null) {
+          const targetCount = c.targetScore || 1;
+          rAcc = Math.min(100, Math.max(0, (c.challengedScore / targetCount) * 100));
+        }
+      } else if (c.gameMode === "DOMINATION") {
+        if (cAcc === null && c.challengerProgressJson) {
+          try {
+            const cData = JSON.parse(c.challengerProgressJson);
+            const total = (cData.correctCount || 0) + (cData.wrongCount || 0);
+            if (total > 0) cAcc = (cData.correctCount / total) * 100;
+          } catch (e) {}
+        }
+        if (rAcc === null && c.challengedProgressJson) {
+          try {
+            const rData = JSON.parse(c.challengedProgressJson);
+            const total = (rData.correctCount || 0) + (rData.wrongCount || 0);
+            if (total > 0) rAcc = (rData.correctCount / total) * 100;
+          } catch (e) {}
+        }
+      }
+
+      return {
+        ...c,
+        challengerAccuracy: cAcc,
+        challengedAccuracy: rAcc
+      };
+    });
+
+    const pendingReceived = formattedChallenges.filter(
       c => c.challengedId === userId && c.status === "PENDING" && !c.challengedDone
     );
 
-    const active = userChallenges.filter(
+    const active = formattedChallenges.filter(
       c => c.status !== "DECLINED" && c.status !== "COMPLETED" && !(c.challengerDone && c.challengedDone)
     );
 
-    const completed = userChallenges.filter(
+    const completed = formattedChallenges.filter(
       c => c.status === "COMPLETED" || (c.challengerDone && c.challengedDone)
     );
 
     return NextResponse.json({
       pendingCount: pendingReceived.length,
-      challenges: userChallenges,
+      challenges: formattedChallenges,
       active,
       completed
     });

@@ -426,6 +426,14 @@ export default function DashboardClient({
                     
                     const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
                     const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
+                    const myDone = isChallenger ? ch.challengerDone : ch.challengedDone;
+                    const rivalDone = isChallenger ? ch.challengedDone : ch.challengerDone;
+
+                    const formatAcc = (acc: number | null | undefined, done: boolean) => {
+                      if (acc !== null && acc !== undefined) return `${Math.round(acc)}%`;
+                      if (!done) return "Sin jugar";
+                      return "0%";
+                    };
 
                     let resultBadge = "🤝 Empate";
                     let resultBg = "rgba(245, 158, 11, 0.2)";
@@ -469,7 +477,7 @@ export default function DashboardClient({
                             </span>
                           </div>
                           <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.3rem" }}>
-                            Tu precisión: <strong style={{ color: "#fff" }}>{myAcc !== null && myAcc !== undefined ? `${Math.round(myAcc)}%` : "0%"}</strong> • Oponente: <strong style={{ color: "#fff" }}>{rivalAcc !== null && rivalAcc !== undefined ? `${Math.round(rivalAcc)}%` : "0%"}</strong>
+                            Tu precisión: <strong style={{ color: "#fff" }}>{formatAcc(myAcc, myDone)}</strong> • Oponente: <strong style={{ color: "#fff" }}>{formatAcc(rivalAcc, rivalDone)}</strong>
                           </div>
                         </div>
 

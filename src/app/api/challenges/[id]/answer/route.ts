@@ -199,12 +199,17 @@ export async function POST(
 
     } else {
       // Standard / LIGHTNING mode logic
+      const targetCount = challenge.targetScore || 1;
+      const accuracy = Math.min(100, Math.max(0, (score / targetCount) * 100));
+
       if (isChallenger) {
         updateData.challengerScore = score;
+        updateData.challengerAccuracy = accuracy;
         updateData.challengerTimeMs = timeMs;
         updateData.challengerDone = true;
       } else {
         updateData.challengedScore = score;
+        updateData.challengedAccuracy = accuracy;
         updateData.challengedTimeMs = timeMs;
         updateData.challengedDone = true;
         updateData.status = "ACCEPTED";
