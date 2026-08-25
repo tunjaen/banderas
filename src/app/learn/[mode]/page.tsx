@@ -117,14 +117,19 @@ function AnimatedFlameIcon({ size = 52 }: { size?: number }) {
   );
 }
 
+import QuestionCountModal from "@/components/QuestionCountModal";
+
 export default function LearnPage({ params }: { params: Promise<{ mode: string }> }) {
   const resolvedParams = use(params);
   const mode = resolvedParams.mode;
   const searchParams = useSearchParams();
   const continent = searchParams.get("continent");
   const subregion = searchParams.get("subregion");
+  const limitParam = searchParams.get("limit");
   const router = useRouter();
   const { t, lang } = useLanguage();
+
+  const [activeLimit, setActiveLimit] = useState<number | null>(limitParam ? parseInt(limitParam, 10) : null);
 
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
@@ -143,6 +148,8 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   const [timeLeft, setTimeLeft] = useState(10);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const roundLimit = activeLimit || 10;
+
   useEffect(() => {
     const saved = localStorage.getItem("app-timer-enabled");
     if (saved === "true") setIsTimerEnabled(true);
@@ -155,7 +162,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   };
 
   const fetchQuestion = async () => {
-    if (questionCount >= 10) {
+    if (questionCount >= roundLimit) {
       sessionStorage.setItem("lastSession", JSON.stringify({
         total: questionCount,
         correct: correctCount,
@@ -293,6 +300,16 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
 
   const isMastered = question.status === "Dominado";
 
+  if (activeLimit === null) {
+    return (
+      <QuestionCountModal
+        onSelect={(limit) => setActiveLimit(limit)}
+        onClose={() => router.push("/dashboard")}
+        subtitle={continent || subregion || undefined}
+      />
+    );
+  }
+
   return (
     <div className="container" style={{ maxWidth: "800px", padding: "1rem", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
@@ -302,9 +319,14 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
           <FaTimes />
         </button>
 
-        {/* Progress Bar */}
-        <div style={{ flex: 1, margin: "0 1.5rem", height: "10px", background: "rgba(255,255,255,0.1)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
-          <div style={{ width: `${(questionCount / 10) * 100}%`, height: "100%", background: "var(--color-primary)", borderRadius: "var(--radius-full)", transition: "width 0.3s ease-in-out" }}></div>
+        {/* Progress Bar & Question Counter */}
+        <div style={{ flex: 1, margin: "0 1rem 0 1.5rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{ flex: 1, height: "10px", background: "rgba(255,255,255,0.1)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
+            <div style={{ width: `${(questionCount / roundLimit) * 100}%`, height: "100%", background: "var(--color-primary)", borderRadius: "var(--radius-full)", transition: "width 0.3s ease-in-out" }}></div>
+          </div>
+          <span style={{ fontSize: "0.8rem", fontWeight: "800", color: "var(--color-primary)", whiteSpace: "nowrap" }}>
+            {questionCount + 1}/{roundLimit}
+          </span>
         </div>
 
         {/* Countdown Timer Toggle Button */}

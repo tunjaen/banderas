@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { FaChevronRight, FaChevronDown, FaArrowLeft } from "react-icons/fa";
+import QuestionCountModal from "@/components/QuestionCountModal";
 
 interface SubRegionOption {
   id: string;
@@ -29,6 +30,7 @@ export default function SubRegionSelector() {
   const router = useRouter();
   const { lang } = useLanguage();
   const [expandedContinent, setExpandedContinent] = useState<string | null>(null);
+  const [pendingOption, setPendingOption] = useState<SubRegionOption | null>(null);
 
   const continentGroups: ContinentGroup[] = [
     {
@@ -136,13 +138,19 @@ export default function SubRegionSelector() {
   };
 
   const handleSelectOption = (opt: SubRegionOption) => {
-    if (opt.paramType === "subregion") {
-      router.push(`/learn/continents?subregion=${opt.paramValue}`);
-    } else if (opt.paramType === "continent") {
-      router.push(`/learn/continents?continent=${encodeURIComponent(opt.paramValue)}`);
+    setPendingOption(opt);
+  };
+
+  const handleStartSession = (limit: number) => {
+    if (!pendingOption) return;
+    if (pendingOption.paramType === "subregion") {
+      router.push(`/learn/continents?subregion=${pendingOption.paramValue}&limit=${limit}`);
+    } else if (pendingOption.paramType === "continent") {
+      router.push(`/learn/continents?continent=${encodeURIComponent(pendingOption.paramValue)}&limit=${limit}`);
     } else {
-      router.push(`/learn/world`);
+      router.push(`/learn/world?limit=${limit}`);
     }
+    setPendingOption(null);
   };
 
   return (
@@ -300,6 +308,14 @@ export default function SubRegionSelector() {
           );
         })}
       </div>
+
+      {pendingOption && (
+        <QuestionCountModal
+          onSelect={handleStartSession}
+          onClose={() => setPendingOption(null)}
+          subtitle={lang === 'en' ? pendingOption.nameEn : pendingOption.nameEs}
+        />
+      )}
     </div>
   );
 }
