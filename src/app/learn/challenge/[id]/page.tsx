@@ -93,6 +93,12 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
             }
           } catch (e) {}
 
+          // Check if challenge is already COMPLETED or both players are done
+          if (data.challenge.status === "COMPLETED" || (data.challenge.challengerDone && data.challenge.challengedDone)) {
+            setIsGameOver(true);
+            setGameResult({ isFinished: true, challenge: data.challenge });
+          }
+
           if (!startTime) setStartTime(Date.now());
         }
       }
@@ -307,6 +313,9 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
 
   const cDominated = Object.values(challengerHits).filter(h => h >= 3).length;
   const rDominated = Object.values(challengedHits).filter(h => h >= 3).length;
+
+  const targetChallenge = gameResult?.challenge || challenge;
+  const isChallengeFinished = gameResult?.isFinished || targetChallenge?.status === "COMPLETED" || (targetChallenge?.challengerDone && targetChallenge?.challengedDone);
 
   // 3-day expiration countdown calculation
   const expiresAtMs = challenge?.createdAt ? new Date(challenge.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
@@ -545,35 +554,41 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
             </div>
 
             <h2 style={{ fontSize: "1.75rem", fontWeight: "900", color: "#fff", marginBottom: "0.5rem" }}>
-              {submitting ? "Calculando precisión y resultados..." : "¡Sesión / Duelo Completado!"}
+              {submitting ? "Calculando precisión y resultados..." : isChallengeFinished ? "🏆 Resumen de Duelo Finalizado" : "¡Sesión / Duelo Completado!"}
             </h2>
 
             <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", background: "rgba(167, 244, 50, 0.15)", color: "var(--color-primary)", padding: "0.3rem 0.8rem", borderRadius: "20px", fontWeight: "800", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
               🎉 Ronda Registrada
             </div>
 
-            {gameResult?.isFinished ? (
+            {isChallengeFinished ? (
               <div style={{ background: "rgba(255,255,255,0.03)", padding: "1.25rem", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: "1.5rem" }}>
-                <h3 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#fff", marginBottom: "1rem" }}>
-                  {gameResult.challenge.winnerId === "DRAW"
-                    ? "🤝 ¡Empate Total por Precisión!"
-                    : gameResult.challenge.winnerId === challenge.challengerId
-                      ? `🏆 Ganador: ${challenge.challenger.name}`
-                      : `🏆 Ganador: ${challenge.challenged.name}`}
+                <h3 style={{ fontSize: "1.25rem", fontWeight: "900", color: "#fff", marginBottom: "1rem" }}>
+                  {targetChallenge.winnerId === "DRAW"
+                    ? "🤝 ¡Empate Total!"
+                    : targetChallenge.winnerId === targetChallenge.challengerId
+                      ? `🏆 Ganador: ${targetChallenge.challenger.name}`
+                      : `🏆 Ganador: ${targetChallenge.challenged.name}`}
                 </h3>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "0.85rem", borderRadius: "10px" }}>
-                    <div style={{ fontWeight: "800", color: "#10B981" }}>{challenge.challenger.name}</div>
-                    <div style={{ fontSize: "1.1rem", fontWeight: "900", color: "var(--color-primary)", marginTop: "0.2rem" }}>
-                      {gameResult.challenge.challengerAccuracy ? `${Math.round(gameResult.challenge.challengerAccuracy)}% Precisión` : `${gameResult.challenge.challengerScore} Países`}
+                  <div style={{ background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.25)", padding: "0.85rem", borderRadius: "12px" }}>
+                    <div style={{ fontWeight: "800", color: "#10B981", fontSize: "0.95rem" }}>🟢 {targetChallenge.challenger.name}</div>
+                    <div style={{ fontSize: "0.9rem", fontWeight: "900", color: "#fff", marginTop: "0.35rem" }}>
+                      {cDominated}/{totalTerritoryCount} países ({Math.min(100, Math.round((cDominated / totalTerritoryCount) * 100))}% territorio)
+                    </div>
+                    <div style={{ fontSize: "0.825rem", fontWeight: "700", color: "#10B981", marginTop: "0.15rem" }}>
+                      {targetChallenge.challengerAccuracy !== null && targetChallenge.challengerAccuracy !== undefined ? `${Math.round(targetChallenge.challengerAccuracy)}% acierto` : "100% acierto"}
                     </div>
                   </div>
 
-                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "0.85rem", borderRadius: "10px" }}>
-                    <div style={{ fontWeight: "800", color: "#60A5FA" }}>{challenge.challenged.name}</div>
-                    <div style={{ fontSize: "1.1rem", fontWeight: "900", color: "#60A5FA", marginTop: "0.2rem" }}>
-                      {gameResult.challenge.challengedAccuracy ? `${Math.round(gameResult.challenge.challengedAccuracy)}% Precisión` : `${gameResult.challenge.challengedScore} Países`}
+                  <div style={{ background: "rgba(59, 130, 246, 0.1)", border: "1px solid rgba(59, 130, 246, 0.25)", padding: "0.85rem", borderRadius: "12px" }}>
+                    <div style={{ fontWeight: "800", color: "#60A5FA", fontSize: "0.95rem" }}>🔵 {targetChallenge.challenged.name}</div>
+                    <div style={{ fontSize: "0.9rem", fontWeight: "900", color: "#fff", marginTop: "0.35rem" }}>
+                      {rDominated}/{totalTerritoryCount} países ({Math.min(100, Math.round((rDominated / totalTerritoryCount) * 100))}% territorio)
+                    </div>
+                    <div style={{ fontSize: "0.825rem", fontWeight: "700", color: "#60A5FA", marginTop: "0.15rem" }}>
+                      {targetChallenge.challengedAccuracy !== null && targetChallenge.challengedAccuracy !== undefined ? `${Math.round(targetChallenge.challengedAccuracy)}% acierto` : "100% acierto"}
                     </div>
                   </div>
                 </div>
