@@ -59,6 +59,10 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   const hasLoadedQuestionsRef = useRef(false);
   const recentAnswersRef = useRef<Array<{ countryId: string; isCorrect: boolean }>>([]);
 
+  const myHitsRef = useRef<Record<string, number>>({});
+  const myCorrectCountRef = useRef(0);
+  const myWrongCountRef = useRef(0);
+
   const loadChallengeData = async () => {
     try {
       const res = await fetch(`/api/challenges/${id}`);
@@ -66,6 +70,8 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
         const data = await res.json();
         if (data.challenge) {
           setChallenge(data.challenge);
+          const isChallengerUser = data.currentUserId ? (data.challenge.challengerId === data.currentUserId) : true;
+
           if (data.currentUserId) {
             setCurrentUserId(data.currentUserId);
           }
@@ -81,15 +87,29 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
             }
           }
 
-          // Parse progress JSONs for live map updates
+          // Parse progress JSONs for live map updates and restore full stats
           try {
             if (data.challenge.challengerProgressJson) {
               const cData = JSON.parse(data.challenge.challengerProgressJson);
               setChallengerHits(cData.hits || {});
+              if (isChallengerUser) {
+                setMyCorrectCount(cData.correctCount || 0);
+                setMyWrongCount(cData.wrongCount || 0);
+                myCorrectCountRef.current = cData.correctCount || 0;
+                myWrongCountRef.current = cData.wrongCount || 0;
+                myHitsRef.current = cData.hits || {};
+              }
             }
             if (data.challenge.challengedProgressJson) {
               const rData = JSON.parse(data.challenge.challengedProgressJson);
               setChallengedHits(rData.hits || {});
+              if (!isChallengerUser) {
+                setMyCorrectCount(rData.correctCount || 0);
+                setMyWrongCount(rData.wrongCount || 0);
+                myCorrectCountRef.current = rData.correctCount || 0;
+                myWrongCountRef.current = rData.wrongCount || 0;
+                myHitsRef.current = rData.hits || {};
+              }
             }
           } catch (e) {}
 
@@ -133,6 +153,48 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
     return () => clearInterval(timer);
   }, [loading, isGameOver, currentIndex, selectedOption, challenge]);
 
+  const autoSaveProgress = async (newHits: Record<string, number>, newCorrect: number, newWrong: number, ans: { countryId: string; isCorrect: boolean }) => {
+    if (!challenge || challenge.gameMode !== "DOMINATION") return;
+
+    try {
+      const payload = {
+        score: newCorrect,
+        timeMs: startTime ? Date.now() - startTime : 5000,
+        progressData: {
+          hits: newHits,
+          correctCount: newCorrect,
+          wrongCount: newWrong,
+          recentAnswers: [ans]
+        }
+      };
+
+      const res = await fetch(`/api/challenges/${id}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.challenge) {
+          setChallenge(data.challenge);
+          try {
+            if (data.challenge.challengerProgressJson) {
+              const cData = JSON.parse(data.challenge.challengerProgressJson);
+              setChallengerHits(cData.hits || {});
+            }
+            if (data.challenge.challengedProgressJson) {
+              const rData = JSON.parse(data.challenge.challengedProgressJson);
+              setChallengedHits(rData.hits || {});
+            }
+          } catch (e) {}
+        }
+      }
+    } catch (e) {
+      console.error("Auto-save error:", e);
+    }
+  };
+
   const handleTimeOut = () => {
     if (selectedOption !== null) return;
     setSelectedOption({ id: "TIMEOUT_WRONG" });
@@ -153,20 +215,38 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
     if (isCorrect) setScore(newScore);
 
     if (challenge?.gameMode === "DOMINATION") {
-      recentAnswersRef.current.push({ countryId: currentCountry.id, isCorrect });
-      if (isCorrect) {
-        setMyCorrectCount(prev => prev + 1);
-        const prevHits = myHits[currentCountry.id] || 0;
-        const newHits = prevHits + 1;
-        setMyHits(prev => ({ ...prev, [currentCountry.id]: newHits }));
+      const ansObj = { countryId: currentCountry.id, isCorrect };
+      recentAnswersRef.current.push(ansObj);
 
-        if (newHits === 3) {
+      let newCorrect = myCorrectCountRef.current;
+      let newWrong = myWrongCountRef.current;
+      const updatedHits = { ...myHitsRef.current };
+
+      if (isCorrect) {
+        newCorrect += 1;
+        myCorrectCountRef.current = newCorrect;
+        setMyCorrectCount(newCorrect);
+
+        const prevHits = updatedHits[currentCountry.id] || 0;
+        const newHitsVal = prevHits + 1;
+        updatedHits[currentCountry.id] = newHitsVal;
+        myHitsRef.current = updatedHits;
+
+        if (isChallenger) setChallengerHits({ ...updatedHits });
+        else setChallengedHits({ ...updatedHits });
+
+        if (newHitsVal === 3) {
           setDominatedBanner(`👑 ¡PAÍS DOMINADO! ${lang === 'en' ? currentCountry.nameEn : currentCountry.name} (3/3 aciertos)`);
           setTimeout(() => setDominatedBanner(null), 3000);
         }
       } else {
-        setMyWrongCount(prev => prev + 1);
+        newWrong += 1;
+        myWrongCountRef.current = newWrong;
+        setMyWrongCount(newWrong);
       }
+
+      // Auto-save this single answer to backend asynchronously in real-time
+      autoSaveProgress(updatedHits, newCorrect, newWrong, ansObj);
     }
 
     setTimeout(() => {
@@ -187,39 +267,19 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
 
   const finishGame = async (finalScore: number) => {
     setIsGameOver(true);
-    setSubmitting(true);
-
-    const elapsedMs = startTime ? Date.now() - startTime : 15000;
+    setSubmitting(false);
 
     try {
-      const payload: any = {
-        score: finalScore,
-        timeMs: elapsedMs
-      };
-
-      if (challenge?.gameMode === "DOMINATION") {
-        payload.progressData = {
-          hits: myHits,
-          correctCount: myCorrectCount,
-          wrongCount: myWrongCount,
-          recentAnswers: recentAnswersRef.current
-        };
-      }
-
-      const res = await fetch(`/api/challenges/${id}/answer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
+      const res = await fetch(`/api/challenges/${id}`);
       if (res.ok) {
         const data = await res.json();
-        setGameResult(data);
+        if (data.challenge) {
+          setChallenge(data.challenge);
+          setGameResult({ isFinished: data.challenge.status === "COMPLETED", challenge: data.challenge });
+        }
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -312,7 +372,9 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   const totalTerritoryCount = allTerritoryCountries.length || challenge.targetScore || 1;
 
   const cDominated = Object.values(challengerHits).filter(h => h >= 3).length;
+  const cInProgress = Object.values(challengerHits).filter(h => h === 1 || h === 2).length;
   const rDominated = Object.values(challengedHits).filter(h => h >= 3).length;
+  const rInProgress = Object.values(challengedHits).filter(h => h === 1 || h === 2).length;
 
   const targetChallenge = gameResult?.challenge || challenge;
   const isChallengeFinished = gameResult?.isFinished || targetChallenge?.status === "COMPLETED" || (targetChallenge?.challengerDone && targetChallenge?.challengedDone);
@@ -355,14 +417,18 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
           </div>
 
           {isDomination && (
-            <button
-              onClick={saveSessionAndExit}
-              title="Guardar aciertos acumulados y continuar en la siguiente sesión"
-              className="btn btn-outline"
-              style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "0.35rem" }}
-            >
-              <FaSave size={12} /> <span>Guardar y Salir</span>
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#10B981", background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "0.25rem 0.6rem", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                ⚡ Guardado Auto
+              </span>
+              <Link
+                href="/dashboard"
+                className="btn btn-outline"
+                style={{ padding: "0.35rem 0.75rem", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "0.35rem" }}
+              >
+                <FaArrowLeft size={11} /> <span>Inicio</span>
+              </Link>
+            </div>
           )}
 
           {!isDomination && challenge.gameMode === "LIGHTNING" && (
@@ -376,7 +442,7 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
         {isDomination && (
           <div style={{ background: "rgba(13, 20, 16, 0.8)", border: "1px solid rgba(16, 185, 129, 0.25)", padding: "1rem", borderRadius: "16px", marginBottom: "1.25rem" }}>
             <div style={{ fontSize: "0.85rem", fontWeight: "800", color: "#fff", marginBottom: "0.75rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>👑 Comparativa de Países Dominados (3/3)</span>
+              <span>👑 Comparativa de Territorio</span>
               <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>Total: {totalTerritoryCount} países</span>
             </div>
 
@@ -384,7 +450,9 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
             <div style={{ marginBottom: "0.6rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.775rem", fontWeight: "700", marginBottom: "0.25rem" }}>
                 <span style={{ color: "#10B981" }}>🟢 {challenge.challenger.name}</span>
-                <span style={{ color: "#10B981" }}>{cDominated} / {totalTerritoryCount} dominados</span>
+                <span style={{ color: "#10B981" }}>
+                  {cDominated} / {totalTerritoryCount} dominados {cInProgress > 0 ? `• 🟡 ${cInProgress} en progreso` : ""}
+                </span>
               </div>
               <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.08)", borderRadius: "10px", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${(cDominated / totalTerritoryCount) * 100}%`, background: "#10B981", transition: "width 0.4s ease" }} />
@@ -395,7 +463,9 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.775rem", fontWeight: "700", marginBottom: "0.25rem" }}>
                 <span style={{ color: "#60A5FA" }}>🔵 {challenge.challenged.name}</span>
-                <span style={{ color: "#60A5FA" }}>{rDominated} / {totalTerritoryCount} dominados</span>
+                <span style={{ color: "#60A5FA" }}>
+                  {rDominated} / {totalTerritoryCount} dominados {rInProgress > 0 ? `• 🟡 ${rInProgress} en progreso` : ""}
+                </span>
               </div>
               <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.08)", borderRadius: "10px", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${(rDominated / totalTerritoryCount) * 100}%`, background: "#3B82F6", transition: "width 0.4s ease" }} />
@@ -594,12 +664,12 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
             ) : (
-              <div style={{ padding: "1.25rem", background: "rgba(245, 158, 11, 0.1)", borderRadius: "14px", border: "1px solid rgba(245, 158, 11, 0.25)", color: "#F59E0B", marginBottom: "1.5rem" }}>
-                <p style={{ fontWeight: "800", fontSize: "1rem", margin: 0 }}>
-                  ⏳ Progreso de Sesión Guardado
+              <div style={{ padding: "1.25rem", background: "rgba(16, 185, 129, 0.1)", borderRadius: "14px", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#10B981", marginBottom: "1.5rem" }}>
+                <p style={{ fontWeight: "900", fontSize: "1.05rem", margin: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+                  ⚡ ¡Respuestas Guardadas Automáticamente!
                 </p>
-                <p style={{ fontSize: "0.85rem", margin: "0.4rem 0 0 0", color: "rgba(255,255,255,0.8)" }}>
-                  Puedes volver a jugar en cualquier momento o al día siguiente para dominar el 100% del territorio.
+                <p style={{ fontSize: "0.85rem", margin: "0.4rem 0 0 0", color: "rgba(255,255,255,0.85)" }}>
+                  Has acumulado <strong>{myCorrectCount} aciertos totales</strong> en este duelo. Tu avance de banderas y mapa está 100% guardado en la nube.
                 </p>
               </div>
             )}
