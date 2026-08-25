@@ -65,6 +65,81 @@ export async function POST(
         totalTerritoryCount
       });
 
+      // Synchronize recent answers to UserProgress & User stats (Tu Mapa Global & Estadísticas)
+      const recentAnswers: Array<{ countryId: string; isCorrect: boolean }> = progressData.recentAnswers || [];
+      if (recentAnswers.length > 0) {
+        let sessionFlagCorrect = 0;
+        let sessionFlagWrong = 0;
+
+        for (const ans of recentAnswers) {
+          if (!ans.countryId) continue;
+          if (ans.isCorrect) sessionFlagCorrect++;
+          else sessionFlagWrong++;
+
+          let progress = await prisma.userProgress.findUnique({
+            where: { userId_countryId: { userId, countryId: ans.countryId } }
+          });
+
+          if (!progress) {
+            progress = await prisma.userProgress.create({
+              data: { userId, countryId: ans.countryId }
+            });
+          }
+
+          let { easeFactor, interval, correctAnswers, wrongAnswers, consecutiveCorrect } = progress;
+          const quality = ans.isCorrect ? 4 : 0;
+
+          if (ans.isCorrect) {
+            correctAnswers += 1;
+            consecutiveCorrect += 1;
+            if (interval === 0) interval = 1;
+            else if (interval === 1) interval = 6;
+            else interval = Math.round(interval * easeFactor);
+          } else {
+            wrongAnswers += 1;
+            consecutiveCorrect = 0;
+            interval = 1;
+          }
+
+          easeFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+          if (easeFactor < 1.3) easeFactor = 1.3;
+
+          const hitsInDuel = hitsMap[ans.countryId] || 0;
+          let status = "Aprendiendo";
+          if (correctAnswers === 0) status = "Nuevo";
+          else if (hitsInDuel >= 3 || (correctAnswers >= 4 && (correctAnswers / (correctAnswers + wrongAnswers)) > 0.8)) status = "Dominado";
+          else if (consecutiveCorrect >= 3 || hitsInDuel >= 1) status = "Familiar";
+
+          const nextReview = new Date();
+          nextReview.setDate(nextReview.getDate() + interval);
+
+          await prisma.userProgress.update({
+            where: { id: progress.id },
+            data: {
+              easeFactor,
+              interval,
+              correctAnswers,
+              wrongAnswers,
+              consecutiveCorrect,
+              status,
+              lastReviewed: new Date(),
+              nextReview
+            }
+          });
+        }
+
+        const xpAwarded = (sessionFlagCorrect * 5) + (sessionFlagWrong * 1);
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            flagCorrect: { increment: sessionFlagCorrect },
+            flagWrong: { increment: sessionFlagWrong },
+            xp: { increment: xpAwarded },
+            lastPlayedAt: new Date()
+          }
+        });
+      }
+
       if (isChallenger) {
         updateData.challengerProgressJson = progressStr;
         updateData.challengerAccuracy = accuracy;

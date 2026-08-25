@@ -241,6 +241,7 @@ export async function GET(
     return NextResponse.json({
       challenge,
       questions,
+      currentUserId: userId,
       allTerritoryCountries: orderedCountries.map(c => ({
         id: c?.id,
         name: c?.name,

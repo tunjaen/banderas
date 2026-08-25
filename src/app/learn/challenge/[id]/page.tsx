@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, use } from "react";
+import { useSession } from "next-auth/react";
 import { useLanguage } from "@/lib/LanguageContext";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
@@ -29,6 +30,9 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   const [gameResult, setGameResult] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const { data: session } = useSession();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   // Tab mode for Domination: "QUIZ" | "MAP"
   const [activeTab, setActiveTab] = useState<"QUIZ" | "MAP">("QUIZ");
 
@@ -39,8 +43,21 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
   const [myWrongCount, setMyWrongCount] = useState(0);
   const [dominatedBanner, setDominatedBanner] = useState<string | null>(null);
 
+  const activeUserId = currentUserId || (session?.user as any)?.id;
+  const isChallenger = !challenge || !activeUserId ? true : (challenge.challengerId === activeUserId);
+
+  const myHits = isChallenger ? challengerHits : challengedHits;
+  const setMyHits = (updateFn: (prev: Record<string, number>) => Record<string, number>) => {
+    if (isChallenger) {
+      setChallengerHits(updateFn);
+    } else {
+      setChallengedHits(updateFn);
+    }
+  };
+
   // Ref to ensure questions are loaded strictly ONCE per session and never changed by background updates
   const hasLoadedQuestionsRef = useRef(false);
+  const recentAnswersRef = useRef<Array<{ countryId: string; isCorrect: boolean }>>([]);
 
   const loadChallengeData = async () => {
     try {
@@ -49,6 +66,9 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
         const data = await res.json();
         if (data.challenge) {
           setChallenge(data.challenge);
+          if (data.currentUserId) {
+            setCurrentUserId(data.currentUserId);
+          }
           
           // Set questions and territory strictly ONCE on initial load
           if (!hasLoadedQuestionsRef.current) {
@@ -127,11 +147,12 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
     if (isCorrect) setScore(newScore);
 
     if (challenge?.gameMode === "DOMINATION") {
+      recentAnswersRef.current.push({ countryId: currentCountry.id, isCorrect });
       if (isCorrect) {
         setMyCorrectCount(prev => prev + 1);
-        const prevHits = challengerHits[currentCountry.id] || 0;
+        const prevHits = myHits[currentCountry.id] || 0;
         const newHits = prevHits + 1;
-        setChallengerHits(prev => ({ ...prev, [currentCountry.id]: newHits }));
+        setMyHits(prev => ({ ...prev, [currentCountry.id]: newHits }));
 
         if (newHits === 3) {
           setDominatedBanner(`👑 ¡PAÍS DOMINADO! ${lang === 'en' ? currentCountry.nameEn : currentCountry.name} (3/3 aciertos)`);
@@ -172,9 +193,10 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
 
       if (challenge?.gameMode === "DOMINATION") {
         payload.progressData = {
-          hits: challengerHits,
+          hits: myHits,
           correctCount: myCorrectCount,
-          wrongCount: myWrongCount
+          wrongCount: myWrongCount,
+          recentAnswers: recentAnswersRef.current
         };
       }
 
@@ -207,9 +229,10 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
           score,
           timeMs: elapsedMs,
           progressData: {
-            hits: challengerHits,
+            hits: myHits,
             correctCount: myCorrectCount,
-            wrongCount: myWrongCount
+            wrongCount: myWrongCount,
+            recentAnswers: recentAnswersRef.current
           },
           isSessionEnd: true
         })
@@ -434,7 +457,7 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
                 {targetCountry && (
                   <div className="card" style={{ padding: "2rem 1.5rem", textAlign: "center", background: "var(--color-surface)", borderRadius: "16px", marginBottom: "1.25rem", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.5rem", fontWeight: "700" }}>
-                      Pregunta {currentIndex + 1} de {questions.length} • {isDomination ? `Aciertos actuales: ${(challengerHits[targetCountry.id] || 0)}/3` : `Puntos: ${score}`}
+                      Pregunta {currentIndex + 1} de {questions.length} • {isDomination ? `Aciertos actuales: ${(myHits[targetCountry.id] || 0)}/3` : `Puntos: ${score}`}
                     </div>
                     <img 
                       src={`https://flagcdn.com/w640/${targetCountry.isoCode.toLowerCase()}.png`}
