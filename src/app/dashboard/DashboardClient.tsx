@@ -31,6 +31,40 @@ import { useLanguage } from "@/lib/LanguageContext";
 import LeaderboardTab from "./LeaderboardTab";
 import CreateChallengeModal from "@/components/CreateChallengeModal";
 
+const SCOPE_NAMES: Record<string, string> = {
+  world: "Todo el Mundo",
+  "Todo el Mundo": "Todo el Mundo",
+  Mundo: "Todo el Mundo",
+  Europa: "Europa",
+  Asia: "Asia",
+  América: "América",
+  África: "África",
+  Oceanía: "Oceanía",
+  Islas: "Cazatesoros de Islas",
+  Africa_NorthWest: "África Septentrional y Occidental",
+  Africa_East: "África Oriental",
+  Africa_CentralSouth: "África Central y Austral",
+  Europe_WestNorth: "Europa Occidental y del Norte",
+  Europe_South: "Europa del Sur y Mediterráneo",
+  Europe_East: "Europa Oriental y Central",
+  Asia_EastSE: "Asia Oriental y Sudeste Asiático",
+  Asia_SouthCentral: "Asia del Sur y Central",
+  Asia_MiddleEast: "Oriente Medio",
+  America_NorthCentral: "América del Norte y Central",
+  America_Caribbean: "Caribe y Antillas",
+  America_South: "América del Sur"
+};
+
+function formatScopeLabel(scopeValues: string) {
+  if (!scopeValues) return "Global";
+  const parts = scopeValues.split(",").map(s => s.trim());
+  const formattedParts = parts.map(p => SCOPE_NAMES[p] || p.replace(/_/g, " "));
+  if (formattedParts.length === 1) {
+    return formattedParts[0];
+  }
+  return formattedParts.slice(0, 2).join(", ") + (formattedParts.length > 2 ? ` (+${formattedParts.length - 2})` : "");
+}
+
 export default function DashboardClient({ 
   user, 
   totalCountries = 244,
@@ -589,6 +623,9 @@ export default function DashboardClient({
                             <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
                               VS {rivalName}
                             </span>
+                            <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(16, 185, 129, 0.18)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.35)", padding: "0.15rem 0.6rem", borderRadius: "10px" }}>
+                              🗺️ {formatScopeLabel(ch.scopeValues)}
+                            </span>
                             <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.15rem 0.6rem", borderRadius: "10px" }}>
                               📩 ¡Te ha desafiado!
                             </span>
@@ -688,6 +725,9 @@ export default function DashboardClient({
                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                             <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
                               VS {rivalName || "Jugador"}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(16, 185, 129, 0.18)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.35)", padding: "0.15rem 0.6rem", borderRadius: "10px" }}>
+                              🗺️ {formatScopeLabel(ch.scopeValues)}
                             </span>
                             <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
                               {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación (3 Días)"}
@@ -800,6 +840,9 @@ export default function DashboardClient({
                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                             <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
                               VS {rivalName || "Jugador"}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(16, 185, 129, 0.18)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.35)", padding: "0.15rem 0.6rem", borderRadius: "10px" }}>
+                              🗺️ {formatScopeLabel(ch.scopeValues)}
                             </span>
                             <span style={{ fontSize: "0.75rem", fontWeight: "900", background: resultBg, color: resultColor, padding: "0.2rem 0.6rem", borderRadius: "10px" }}>
                               {resultBadge}
