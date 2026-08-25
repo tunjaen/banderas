@@ -550,9 +550,31 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
               </div>
             ) : (
               <>
-                {/* Dominated Notification Popup */}
+                {/* Dominated Notification Popup (Floating Toast Overlay - Zero Layout Shift) */}
                 {dominatedBanner && (
-                  <div className="animate-fade-in" style={{ padding: "0.85rem 1.25rem", background: "linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(16, 185, 129, 0.25))", border: "2px solid #F59E0B", color: "#FFF", borderRadius: "14px", fontWeight: "900", textAlign: "center", fontSize: "1rem", marginBottom: "1rem", boxShadow: "0 8px 25px rgba(245, 158, 11, 0.3)" }}>
+                  <div 
+                    className="animate-scale-up" 
+                    style={{ 
+                      position: "fixed", 
+                      top: "85px", 
+                      left: "50%", 
+                      transform: "translateX(-50%)", 
+                      zIndex: 9999, 
+                      padding: "0.85rem 1.5rem", 
+                      background: "linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(16, 185, 129, 0.95))", 
+                      border: "2px solid #F59E0B", 
+                      color: "#FFF", 
+                      borderRadius: "30px", 
+                      fontWeight: "900", 
+                      textAlign: "center", 
+                      fontSize: "1rem", 
+                      boxShadow: "0 10px 35px rgba(245, 158, 11, 0.5), 0 0 15px rgba(16, 185, 129, 0.4)", 
+                      backdropFilter: "blur(10px)", 
+                      pointerEvents: "none", 
+                      maxWidth: "90vw", 
+                      width: "max-content" 
+                    }}
+                  >
                     {dominatedBanner}
                   </div>
                 )}
