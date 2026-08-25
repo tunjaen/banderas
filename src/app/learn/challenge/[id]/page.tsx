@@ -416,20 +416,6 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {isDomination && (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#10B981", background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "0.25rem 0.6rem", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
-                ⚡ Guardado Auto
-              </span>
-              <Link
-                href="/dashboard"
-                className="btn btn-outline"
-                style={{ padding: "0.35rem 0.75rem", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "0.35rem" }}
-              >
-                <FaArrowLeft size={11} /> <span>Inicio</span>
-              </Link>
-            </div>
-          )}
 
           {!isDomination && challenge.gameMode === "LIGHTNING" && (
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: timeLeft <= 3 ? "rgba(239, 68, 68, 0.2)" : "rgba(245, 158, 11, 0.15)", color: timeLeft <= 3 ? "#EF4444" : "#F59E0B", border: `1px solid ${timeLeft <= 3 ? "#EF4444" : "#F59E0B"}`, padding: "0.4rem 0.8rem", borderRadius: "20px", fontWeight: "900", fontSize: "1rem" }}>
