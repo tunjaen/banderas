@@ -54,6 +54,7 @@ export default function DashboardClient({
   const [showIslandModal, setShowIslandModal] = useState(false);
   const [showCreateChallenge, setShowCreateChallenge] = useState(false);
   const [challengesData, setChallengesData] = useState<any>(null);
+  const [declineChallengeTarget, setDeclineChallengeTarget] = useState<{ id: string; rivalName: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/challenges")
@@ -94,6 +95,24 @@ export default function DashboardClient({
       });
     } catch (e) {
       console.error("Error hiding challenge:", e);
+    }
+  };
+
+  const handleConfirmDecline = async () => {
+    if (!declineChallengeTarget) return;
+    try {
+      await fetch(`/api/challenges/${declineChallengeTarget.id}/decline`, { method: "POST" });
+      setChallengesData((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          active: prev.active ? prev.active.filter((c: any) => c.id !== declineChallengeTarget.id) : []
+        };
+      });
+    } catch (e) {
+      console.error("Error declining challenge:", e);
+    } finally {
+      setDeclineChallengeTarget(null);
     }
   };
 
@@ -392,12 +411,12 @@ export default function DashboardClient({
                             {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
                           </Link>
                           <button
-                            onClick={() => handleHideChallenge(ch.id)}
-                            title="Ocultar reto"
+                            onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName: rivalName || "Jugador" })}
+                            title="Rechazar duelo"
                             className="btn btn-outline"
-                            style={{ padding: "0.45rem 0.65rem", fontSize: "0.8rem", color: "var(--color-text-muted)", borderColor: "rgba(255,255,255,0.15)" }}
+                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
                           >
-                            👁️ Ocultar
+                            🚫 Rechazar
                           </button>
                         </div>
                       </div>
@@ -702,6 +721,66 @@ export default function DashboardClient({
         {/* Create Challenge Modal */}
         {showCreateChallenge && (
           <CreateChallengeModal onClose={() => setShowCreateChallenge(false)} />
+        )}
+
+        {/* Modal de Confirmación para Rechazar Reto */}
+        {declineChallengeTarget && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(6px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: "1rem"
+            }}
+            onClick={() => setDeclineChallengeTarget(null)}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: "var(--color-surface, #1e293b)",
+                border: "1px solid rgba(239, 68, 68, 0.4)",
+                borderRadius: "16px",
+                padding: "1.75rem",
+                maxWidth: "420px",
+                width: "100%",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+                textAlign: "center"
+              }}
+            >
+              <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>⚠️</div>
+              <h3 style={{ fontSize: "1.25rem", fontWeight: "800", color: "#fff", marginBottom: "0.75rem" }}>
+                ¿Rechazar Duelo?
+              </h3>
+              <p style={{ fontSize: "0.9rem", color: "var(--color-text-muted)", marginBottom: "1.5rem", lineHeight: "1.4" }}>
+                ¿Estás seguro de que deseas rechazar este duelo con <strong style={{ color: "#fff" }}>{declineChallengeTarget.rivalName}</strong>? Esta acción no se puede deshacer.
+              </p>
+
+              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+                <button
+                  onClick={() => setDeclineChallengeTarget(null)}
+                  className="btn btn-outline"
+                  style={{ flex: 1, padding: "0.65rem", fontSize: "0.85rem" }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmDecline}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: "0.65rem", fontSize: "0.85rem", background: "#EF4444", borderColor: "#EF4444" }}
+                >
+                  Sí, Rechazar
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
