@@ -340,24 +340,24 @@ export default function DashboardClient({
             </div>
 
             {/* Mis Duelos 1v1 Activos y Pendientes */}
-            {challengesData?.active && challengesData.active.length > 0 && (
-              <div style={{ marginBottom: "2rem" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <SwordsIcon size={20} style={{ color: "#EF4444" }} />
-                    <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
-                      Mis Duelos 1v1 ({challengesData.active.length})
-                    </h2>
-                  </div>
-                  <button
-                    onClick={() => setShowCreateChallenge(true)}
-                    className="btn btn-outline"
-                    style={{ padding: "0.35rem 0.85rem", fontSize: "0.8rem", borderRadius: "8px" }}
-                  >
-                    + Nuevo Duelo
-                  </button>
+            <div style={{ marginBottom: "2rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <SwordsIcon size={20} style={{ color: "#EF4444" }} />
+                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
+                    Mis Duelos 1v1 ({challengesData?.active?.length || 0})
+                  </h2>
                 </div>
+                <button
+                  onClick={() => setShowCreateChallenge(true)}
+                  className="btn btn-outline"
+                  style={{ padding: "0.35rem 0.85rem", fontSize: "0.8rem", borderRadius: "8px" }}
+                >
+                  + Nuevo Duelo
+                </button>
+              </div>
 
+              {challengesData?.active && challengesData.active.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                   {challengesData.active.map((ch: any) => {
                     const isMyTurn = (ch.challengerId === user.id && !ch.challengerDone) || (ch.challengedId === user.id && !ch.challengedDone);
@@ -423,8 +423,21 @@ export default function DashboardClient({
                     );
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div style={{ textAlign: "center", padding: "1.5rem 1rem", background: "rgba(255,255,255,0.02)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem", margin: "0 0 0.85rem" }}>
+                    No tienes duelos activos en este momento. ¡Lanza un desafío para competir en tiempo real!
+                  </p>
+                  <button
+                    onClick={() => setShowCreateChallenge(true)}
+                    className="btn btn-primary"
+                    style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800" }}
+                  >
+                    + Nuevo Duelo 1v1
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Duelos 1v1 Finalizados (Comunicados para Revisión) */}
             {challengesData?.completed && challengesData.completed.length > 0 && (
