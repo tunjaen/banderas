@@ -81,6 +81,22 @@ export default function DashboardClient({
   const lrnPct = (learningCount / totalCountries) * 100;
   const unsPct = Math.max(0, 100 - (domPct + famPct + lrnPct));
 
+  const handleHideChallenge = async (id: string) => {
+    try {
+      await fetch(`/api/challenges/${id}/hide`, { method: "POST" });
+      setChallengesData((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          active: prev.active ? prev.active.filter((c: any) => c.id !== id) : [],
+          completed: prev.completed ? prev.completed.filter((c: any) => c.id !== id) : []
+        };
+      });
+    } catch (e) {
+      console.error("Error hiding challenge:", e);
+    }
+  };
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Global Responsive Navbar */}
@@ -367,13 +383,113 @@ export default function DashboardClient({
                           </div>
                         </div>
 
-                        <Link
-                          href={`/learn/challenge/${ch.id}`}
-                          className="btn btn-primary"
-                          style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: isMyTurn ? "#EF4444" : "#3B82F6" }}
-                        >
-                          {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
-                        </Link>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Link
+                            href={`/learn/challenge/${ch.id}`}
+                            className="btn btn-primary"
+                            style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: isMyTurn ? "#EF4444" : "#3B82F6" }}
+                          >
+                            {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
+                          </Link>
+                          <button
+                            onClick={() => handleHideChallenge(ch.id)}
+                            title="Ocultar reto"
+                            className="btn btn-outline"
+                            style={{ padding: "0.45rem 0.65rem", fontSize: "0.8rem", color: "var(--color-text-muted)", borderColor: "rgba(255,255,255,0.15)" }}
+                          >
+                            👁️ Ocultar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Duelos 1v1 Finalizados (Comunicados para Revisión) */}
+            {challengesData?.completed && challengesData.completed.length > 0 && (
+              <div style={{ marginBottom: "2rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+                  <FaTrophy size={20} style={{ color: "#F59E0B" }} />
+                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
+                    Duelos Finalizados ({challengesData.completed.length})
+                  </h2>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {challengesData.completed.map((ch: any) => {
+                    const isChallenger = ch.challengerId === user.id;
+                    const rivalName = isChallenger ? ch.challenged.name : ch.challenger.name;
+                    const isWinner = ch.winnerId === user.id;
+                    const isDraw = ch.winnerId === "DRAW";
+                    
+                    const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
+                    const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
+
+                    let resultBadge = "🤝 Empate";
+                    let resultBg = "rgba(245, 158, 11, 0.2)";
+                    let resultColor = "#F59E0B";
+
+                    if (isWinner) {
+                      resultBadge = "🏆 ¡Ganaste el Duelo!";
+                      resultBg = "rgba(16, 185, 129, 0.2)";
+                      resultColor = "#10B981";
+                    } else if (!isDraw && ch.winnerId) {
+                      resultBadge = "❌ Perdiste el Duelo";
+                      resultBg = "rgba(239, 68, 68, 0.2)";
+                      resultColor = "#EF4444";
+                    }
+
+                    return (
+                      <div
+                        key={ch.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: "rgba(255,255,255,0.03)",
+                          border: `1px solid ${resultColor}44`,
+                          padding: "1rem 1.25rem",
+                          borderRadius: "14px",
+                          gap: "1rem",
+                          flexWrap: "wrap"
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                              VS {rivalName || "Jugador"}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", fontWeight: "900", background: resultBg, color: resultColor, padding: "0.2rem 0.6rem", borderRadius: "10px" }}>
+                              {resultBadge}
+                            </span>
+                            <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(255, 255, 255, 0.08)", color: "var(--color-text-muted)", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación"}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.3rem" }}>
+                            Tu precisión: <strong style={{ color: "#fff" }}>{myAcc !== null && myAcc !== undefined ? `${Math.round(myAcc)}%` : "0%"}</strong> • Oponente: <strong style={{ color: "#fff" }}>{rivalAcc !== null && rivalAcc !== undefined ? `${Math.round(rivalAcc)}%` : "0%"}</strong>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Link
+                            href={`/learn/challenge/${ch.id}`}
+                            className="btn btn-outline"
+                            style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "0.35rem" }}
+                          >
+                            <span>🗺️ Ver Estadísticas y Mapa</span>
+                          </Link>
+                          <button
+                            onClick={() => handleHideChallenge(ch.id)}
+                            title="Ocultar reto y no verlo nunca más"
+                            className="btn btn-outline"
+                            style={{ padding: "0.5rem 0.75rem", fontSize: "0.8rem", color: "var(--color-text-muted)", borderColor: "rgba(255,255,255,0.15)" }}
+                          >
+                            👁️ Ocultar
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

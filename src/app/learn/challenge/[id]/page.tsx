@@ -259,6 +259,16 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
     loadChallengeData();
   };
 
+  const handleHideCurrentChallenge = async () => {
+    try {
+      await fetch(`/api/challenges/${id}/hide`, { method: "POST" });
+      window.location.href = "/dashboard";
+    } catch (e) {
+      console.error("Error hiding challenge:", e);
+      window.location.href = "/dashboard";
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -598,25 +608,38 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
               const myDominatedCount = Object.values(myHits).filter(h => h >= 3).length;
               const hasRemainingTerritory = totalTerritoryCount > 0 && myDominatedCount < totalTerritoryCount;
               const canPlayAnother = isDomination && hasRemainingTerritory && !gameResult?.isFinished;
+              const isChallengeEnded = gameResult?.isFinished || challenge.status === "COMPLETED";
 
               return (
-                <div style={{ display: "grid", gridTemplateColumns: canPlayAnother ? "1fr 1fr" : "1fr", gap: "0.75rem", marginTop: "1rem" }}>
-                  {canPlayAnother && (
-                    <button
-                      onClick={handlePlayAnotherRound}
-                      className="btn btn-primary"
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: canPlayAnother ? "1fr 1fr" : "1fr", gap: "0.75rem" }}>
+                    {canPlayAnother && (
+                      <button
+                        onClick={handlePlayAnotherRound}
+                        className="btn btn-primary"
+                        style={{ padding: "0.85rem", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+                      >
+                        <SwordsIcon /> <span>Jugar Otra Ronda</span>
+                      </button>
+                    )}
+                    <Link
+                      href="/dashboard"
+                      className={canPlayAnother ? "btn btn-outline" : "btn btn-primary"}
                       style={{ padding: "0.85rem", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
                     >
-                      <SwordsIcon /> <span>Jugar Otra Ronda</span>
+                      <span>Volver al Inicio</span> <FaArrowRight />
+                    </Link>
+                  </div>
+
+                  {isChallengeEnded && (
+                    <button
+                      onClick={handleHideCurrentChallenge}
+                      className="btn btn-outline"
+                      style={{ padding: "0.65rem", fontSize: "0.85rem", color: "var(--color-text-muted)", borderColor: "rgba(255,255,255,0.15)", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+                    >
+                      👁️ Ocultar Reto y No Verlo Más
                     </button>
                   )}
-                  <Link
-                    href="/dashboard"
-                    className={canPlayAnother ? "btn btn-outline" : "btn btn-primary"}
-                    style={{ padding: "0.85rem", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
-                  >
-                    <span>Volver al Inicio</span> <FaArrowRight />
-                  </Link>
                 </div>
               );
             })()}

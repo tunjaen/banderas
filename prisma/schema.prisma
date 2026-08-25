@@ -148,6 +148,8 @@ model Challenge {
   winnerId        String?  // userId or "DRAW"
 
   status          String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, DECLINED
+  hiddenByChallenger Boolean @default(false)
+  hiddenByChallenged Boolean @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

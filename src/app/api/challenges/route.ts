@@ -50,21 +50,29 @@ export async function GET() {
       orderBy: { updatedAt: "desc" }
     });
 
-    const pendingReceived = challenges.filter(
+    const userChallenges = challenges.filter(c => {
+      const isChallenger = c.challengerId === userId;
+      const isChallenged = c.challengedId === userId;
+      if (isChallenger && c.hiddenByChallenger) return false;
+      if (isChallenged && c.hiddenByChallenged) return false;
+      return true;
+    });
+
+    const pendingReceived = userChallenges.filter(
       c => c.challengedId === userId && c.status === "PENDING" && !c.challengedDone
     );
 
-    const active = challenges.filter(
-      c => c.status !== "DECLINED" && !(c.challengerDone && c.challengedDone)
+    const active = userChallenges.filter(
+      c => c.status !== "DECLINED" && c.status !== "COMPLETED" && !(c.challengerDone && c.challengedDone)
     );
 
-    const completed = challenges.filter(
-      c => c.challengerDone && c.challengedDone
+    const completed = userChallenges.filter(
+      c => c.status === "COMPLETED" || (c.challengerDone && c.challengedDone)
     );
 
     return NextResponse.json({
       pendingCount: pendingReceived.length,
-      challenges,
+      challenges: userChallenges,
       active,
       completed
     });
