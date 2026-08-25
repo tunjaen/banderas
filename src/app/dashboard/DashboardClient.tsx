@@ -116,17 +116,22 @@ export default function DashboardClient({
     }
   };
 
+  // Duel alerts notification count
+  const pendingCount = challengesData?.pending?.length || 0;
+  const activeCount = challengesData?.active?.length || 0;
+  const totalDuelAlerts = pendingCount + activeCount;
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Global Responsive Navbar */}
       <Navbar user={user} />
 
-      <div className="container animate-fade-in" style={{ padding: "1.5rem 1rem", maxWidth: "1200px", flex: 1 }}>
+      <div className="container animate-fade-in" style={{ padding: "1.5rem 1rem 3rem", maxWidth: "950px" }}>
         
-        {/* Welcome Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
+        {/* User Header Info */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
           <div>
-            <h1 style={{ fontSize: "1.75rem", fontWeight: "800", margin: 0 }}>
+            <h1 style={{ fontSize: "1.75rem", fontWeight: "900", margin: 0, letterSpacing: "-0.02em" }}>
               {t.dashboard.title}, {user.name?.split(" ")[0] || "Jugador"} 👋
             </h1>
             <p className="text-muted" style={{ fontSize: "0.95rem", marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -162,8 +167,10 @@ export default function DashboardClient({
           )}
         </div>
 
-        {/* Navigation Tabs (Mi Progreso vs Ranking Global) */}
-        <div style={{ display: "flex", gap: "1.5rem", marginBottom: "1.5rem", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "0.25rem" }}>
+        {/* Navigation Tabs (Mi Progreso | Duelos | Ranking Global) */}
+        <div style={{ display: "flex", gap: "1.25rem", marginBottom: "1.5rem", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "0.25rem", flexWrap: "wrap" }}>
+          
+          {/* Tab 1: Mi Progreso */}
           <button 
             onClick={() => setActiveTab("progress")}
             style={{ 
@@ -177,6 +184,42 @@ export default function DashboardClient({
           >
             <FaChartBar /> {t.dashboard.tabs?.progress || "Mi Progreso"}
           </button>
+
+          {/* Tab 2: Duelos (con Notificación Badge) */}
+          <button 
+            onClick={() => setActiveTab("duels")}
+            style={{ 
+              fontSize: "1.05rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem",
+              color: activeTab === "duels" ? "var(--color-primary)" : "var(--color-text-muted)",
+              borderBottom: activeTab === "duels" ? "3px solid var(--color-primary)" : "3px solid transparent",
+              paddingBottom: "0.4rem",
+              marginBottom: "-0.4rem",
+              background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", cursor: "pointer",
+              position: "relative"
+            }}
+          >
+            <SwordsIcon size={16} /> Duelos
+            {totalDuelAlerts > 0 && (
+              <span
+                style={{
+                  background: "#EF4444",
+                  color: "#fff",
+                  fontSize: "0.75rem",
+                  fontWeight: "900",
+                  borderRadius: "20px",
+                  padding: "0.15rem 0.5rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 0 10px rgba(239, 68, 68, 0.65)"
+                }}
+              >
+                {totalDuelAlerts}
+              </span>
+            )}
+          </button>
+
+          {/* Tab 3: Ranking Global */}
           <button 
             onClick={() => setActiveTab("ranking")}
             style={{ 
@@ -192,12 +235,10 @@ export default function DashboardClient({
           </button>
         </div>
 
-        {activeTab === "progress" ? (
+        {activeTab === "progress" && (
           <>
             {/* Main Progress Card (UNFOLDED / EXPANDED by default) */}
             <div className="card" style={{ marginBottom: "2rem", padding: "1.25rem", background: "var(--color-surface)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              
-              {/* Accordion Summary Header */}
               <div 
                 onClick={() => setIsProgressExpanded(!isProgressExpanded)}
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }}
@@ -338,325 +379,6 @@ export default function DashboardClient({
                 </div>
               )}
             </div>
-
-            {/* Seccion Principal: Mis Duelos 1v1 */}
-            <div style={{ marginBottom: "2rem" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <SwordsIcon size={22} style={{ color: "#EF4444" }} />
-                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
-                    Mis Duelos 1v1
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setShowCreateChallenge(true)}
-                  className="btn btn-outline"
-                  style={{ padding: "0.35rem 0.85rem", fontSize: "0.8rem", borderRadius: "8px" }}
-                >
-                  + Nuevo Duelo
-                </button>
-              </div>
-
-              {/* 1. Duelos Pendientes de Respuesta (Recibidos) */}
-              {challengesData?.pending && challengesData.pending.length > 0 && (
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem" }}>
-                    <span style={{ fontSize: "1.1rem" }}>📩</span>
-                    <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#60A5FA" }}>
-                      Duelos Pendientes de Respuesta ({challengesData.pending.length})
-                    </h3>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                    {challengesData.pending.map((ch: any) => {
-                      const rivalName = ch.challenger?.name || "Jugador";
-
-                      const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
-                      const remainingMs = Math.max(0, expiresAtMs - Date.now());
-                      const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
-                      const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-                      return (
-                        <div
-                          key={ch.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            background: "rgba(59, 130, 246, 0.08)",
-                            border: "1px solid rgba(59, 130, 246, 0.3)",
-                            padding: "1rem 1.25rem",
-                            borderRadius: "14px",
-                            gap: "1rem",
-                            flexWrap: "wrap"
-                          }}
-                        >
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                              <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
-                                VS {rivalName}
-                              </span>
-                              <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.15rem 0.6rem", borderRadius: "10px" }}>
-                                📩 ¡Te ha desafiado!
-                              </span>
-                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                                {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación (3 Días)"}
-                              </span>
-                              {ch.gameMode === "DOMINATION" && (
-                                <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(255, 255, 255, 0.08)", color: "var(--color-text-muted)", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                                  ⏳ Quedan {daysLeft}d {hoursLeft}h
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
-                              Territorio: {ch.scopeValues} • {ch.targetScore} Banderas
-                            </div>
-                          </div>
-
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <Link
-                              href={`/learn/challenge/${ch.id}`}
-                              className="btn btn-primary"
-                              style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: "#10B981", borderColor: "#10B981" }}
-                            >
-                              ⚔️ ¡Aceptar y Jugar!
-                            </Link>
-                            <button
-                              onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName })}
-                              title="Rechazar duelo"
-                              className="btn btn-outline"
-                              style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
-                            >
-                              🚫 Rechazar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Duelos Comenzados / En Curso */}
-              {challengesData?.active && challengesData.active.length > 0 && (
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem" }}>
-                    <span style={{ fontSize: "1.1rem" }}>⚔️</span>
-                    <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#fff" }}>
-                      Duelos Comenzados / En Curso ({challengesData.active.length})
-                    </h3>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                    {challengesData.active.map((ch: any) => {
-                      const isMyTurn = (ch.challengerId === user.id && !ch.challengerDone) || (ch.challengedId === user.id && !ch.challengedDone);
-                      const isChallenger = ch.challengerId === user.id;
-                      const rivalName = isChallenger ? ch.challenged?.name : ch.challenger?.name;
-
-                      const myDom = isChallenger ? (ch.challengerDominatedCount ?? ch.challengerScore ?? 0) : (ch.challengedDominatedCount ?? ch.challengedScore ?? 0);
-                      const rivalDom = isChallenger ? (ch.challengedDominatedCount ?? ch.challengedScore ?? 0) : (ch.challengerDominatedCount ?? ch.challengerScore ?? 0);
-
-                      const total = ch.totalTerritoryCount || ch.targetScore || 1;
-                      const myPct = isChallenger ? (ch.challengerTerritoryPct ?? Math.round((myDom / total) * 100)) : (ch.challengedTerritoryPct ?? Math.round((myDom / total) * 100));
-                      const rivalPct = isChallenger ? (ch.challengedTerritoryPct ?? Math.round((rivalDom / total) * 100)) : (ch.challengerTerritoryPct ?? Math.round((rivalDom / total) * 100));
-
-                      const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
-                      const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
-                      const myDone = isChallenger ? ch.challengerDone : ch.challengedDone;
-                      const rivalDone = isChallenger ? ch.challengedDone : ch.challengedDone;
-
-                      const formatAcc = (acc: number | null | undefined, done: boolean) => {
-                        if (acc !== null && acc !== undefined) return `${Math.round(acc)}% acierto`;
-                        if (!done) return "Sin jugar";
-                        return "0% acierto";
-                      };
-
-                      const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
-                      const remainingMs = Math.max(0, expiresAtMs - Date.now());
-                      const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
-                      const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-                      return (
-                        <div
-                          key={ch.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            background: isMyTurn ? "rgba(239, 68, 68, 0.1)" : "rgba(255,255,255,0.03)",
-                            border: `1px solid ${isMyTurn ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.08)"}`,
-                            padding: "1rem 1.25rem",
-                            borderRadius: "14px",
-                            gap: "1rem",
-                            flexWrap: "wrap"
-                          }}
-                        >
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                              <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
-                                VS {rivalName || "Jugador"}
-                              </span>
-                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                                {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación (3 Días)"}
-                              </span>
-                              {ch.gameMode === "DOMINATION" && (
-                                <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                                  ⏳ Quedan {daysLeft}d {hoursLeft}h
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", marginTop: "0.4rem", display: "flex", flexDirection: "column", gap: "0.15rem" }}>
-                              <div>
-                                👑 <strong>Tu progreso:</strong> <span style={{ color: "#10B981", fontWeight: "700" }}>{myDom}/{total} países ({myPct}% territorio)</span> • {formatAcc(myAcc, myDone)}
-                              </div>
-                              <div>
-                                ⚔️ <strong>{rivalName}:</strong> <span style={{ color: "#60A5FA", fontWeight: "700" }}>{rivalDom}/{total} países ({rivalPct}% territorio)</span> • {formatAcc(rivalAcc, rivalDone)}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <Link
-                              href={`/learn/challenge/${ch.id}`}
-                              className="btn btn-primary"
-                              style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: isMyTurn ? "#EF4444" : "#3B82F6" }}
-                            >
-                              {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
-                            </Link>
-                            <button
-                              onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName: rivalName || "Jugador" })}
-                              title="Rechazar duelo"
-                              className="btn btn-outline"
-                              style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
-                            >
-                              🚫 Rechazar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Si no hay pendientes ni activos */}
-              {(!challengesData?.pending || challengesData.pending.length === 0) &&
-               (!challengesData?.active || challengesData.active.length === 0) && (
-                <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem", margin: 0, fontStyle: "italic" }}>
-                  No tienes duelos pendientes ni en curso en este momento.
-                </p>
-              )}
-            </div>
-
-            {/* Duelos 1v1 Finalizados (Comunicados para Revisión) */}
-            {challengesData?.completed && challengesData.completed.length > 0 && (
-              <div style={{ marginBottom: "2rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-                  <FaTrophy size={20} style={{ color: "#F59E0B" }} />
-                  <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
-                    Duelos Finalizados ({challengesData.completed.length})
-                  </h2>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  {challengesData.completed.map((ch: any) => {
-                    const isChallenger = ch.challengerId === user.id;
-                    const rivalName = isChallenger ? ch.challenged.name : ch.challenger.name;
-                    const isWinner = ch.winnerId === user.id;
-                    const isDraw = ch.winnerId === "DRAW";
-                    
-                    const myDom = isChallenger ? (ch.challengerDominatedCount ?? ch.challengerScore ?? 0) : (ch.challengedDominatedCount ?? ch.challengedScore ?? 0);
-                    const rivalDom = isChallenger ? (ch.challengedDominatedCount ?? ch.challengedScore ?? 0) : (ch.challengerDominatedCount ?? ch.challengerScore ?? 0);
-
-                    const total = ch.totalTerritoryCount || ch.targetScore || 1;
-                    const myPct = isChallenger ? (ch.challengerTerritoryPct ?? Math.round((myDom / total) * 100)) : (ch.challengedTerritoryPct ?? Math.round((myDom / total) * 100));
-                    const rivalPct = isChallenger ? (ch.challengedTerritoryPct ?? Math.round((rivalDom / total) * 100)) : (ch.challengerTerritoryPct ?? Math.round((rivalDom / total) * 100));
-
-                    const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
-                    const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
-                    const myDone = isChallenger ? ch.challengerDone : ch.challengedDone;
-                    const rivalDone = isChallenger ? ch.challengedDone : ch.challengerDone;
-
-                    const formatAcc = (acc: number | null | undefined, done: boolean) => {
-                      if (acc !== null && acc !== undefined) return `${Math.round(acc)}% acierto`;
-                      if (!done) return "Sin jugar";
-                      return "0% acierto";
-                    };
-
-                    let resultBadge = "🤝 Empate";
-                    let resultBg = "rgba(245, 158, 11, 0.2)";
-                    let resultColor = "#F59E0B";
-
-                    if (isWinner) {
-                      resultBadge = "🏆 ¡Ganaste el Duelo!";
-                      resultBg = "rgba(16, 185, 129, 0.2)";
-                      resultColor = "#10B981";
-                    } else if (!isDraw && ch.winnerId) {
-                      resultBadge = "❌ Perdiste el Duelo";
-                      resultBg = "rgba(239, 68, 68, 0.2)";
-                      resultColor = "#EF4444";
-                    }
-
-                    return (
-                      <div
-                        key={ch.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          background: "rgba(255,255,255,0.03)",
-                          border: `1px solid ${resultColor}44`,
-                          padding: "1rem 1.25rem",
-                          borderRadius: "14px",
-                          gap: "1rem",
-                          flexWrap: "wrap"
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
-                              VS {rivalName || "Jugador"}
-                            </span>
-                            <span style={{ fontSize: "0.75rem", fontWeight: "900", background: resultBg, color: resultColor, padding: "0.2rem 0.6rem", borderRadius: "10px" }}>
-                              {resultBadge}
-                            </span>
-                            <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(255, 255, 255, 0.08)", color: "var(--color-text-muted)", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
-                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación"}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", marginTop: "0.4rem", display: "flex", flexDirection: "column", gap: "0.15rem" }}>
-                            <div>
-                              👑 <strong>Tu progreso:</strong> <span style={{ color: "#10B981", fontWeight: "700" }}>{myDom}/{total} países ({myPct}% territorio)</span> • {formatAcc(myAcc, myDone)}
-                            </div>
-                            <div>
-                              ⚔️ <strong>{rivalName}:</strong> <span style={{ color: "#60A5FA", fontWeight: "700" }}>{rivalDom}/{total} países ({rivalPct}% territorio)</span> • {formatAcc(rivalAcc, rivalDone)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <Link
-                            href={`/learn/challenge/${ch.id}`}
-                            className="btn btn-outline"
-                            style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "0.35rem" }}
-                          >
-                            <span>🗺️ Ver Estadísticas y Mapa</span>
-                          </Link>
-                          <button
-                            onClick={() => handleHideChallenge(ch.id)}
-                            title="Ocultar reto y no verlo nunca más"
-                            className="btn btn-outline"
-                            style={{ padding: "0.5rem 0.75rem", fontSize: "0.8rem", color: "var(--color-text-muted)", borderColor: "rgba(255,255,255,0.15)" }}
-                          >
-                            👁️ Ocultar
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Main Game Mode Categories */}
             
@@ -808,7 +530,341 @@ export default function DashboardClient({
               </div>
             </div>
           </>
-        ) : (
+        )}
+
+        {activeTab === "duels" && (
+          <div style={{ marginBottom: "2rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <SwordsIcon size={22} style={{ color: "#EF4444" }} />
+                <h2 style={{ fontSize: "1.35rem", fontWeight: "900", margin: 0, color: "#fff" }}>
+                  {lang === 'en' ? "My 1v1 Duels" : "Mis Duelos 1v1"}
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowCreateChallenge(true)}
+                className="btn btn-outline"
+                style={{ padding: "0.35rem 0.85rem", fontSize: "0.8rem", borderRadius: "8px" }}
+              >
+                + {lang === 'en' ? "New Duel" : "Nuevo Duelo"}
+              </button>
+            </div>
+
+            {/* 1. Duelos Pendientes de Respuesta (Recibidos) */}
+            {challengesData?.pending && challengesData.pending.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem" }}>
+                  <span style={{ fontSize: "1.1rem" }}>📩</span>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#60A5FA" }}>
+                    Duelos Pendientes de Respuesta ({challengesData.pending.length})
+                  </h3>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {challengesData.pending.map((ch: any) => {
+                    const rivalName = ch.challenger?.name || "Jugador";
+
+                    const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
+                    const remainingMs = Math.max(0, expiresAtMs - Date.now());
+                    const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+                    const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                    return (
+                      <div
+                        key={ch.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: "rgba(59, 130, 246, 0.08)",
+                          border: "1px solid rgba(59, 130, 246, 0.3)",
+                          padding: "1rem 1.25rem",
+                          borderRadius: "14px",
+                          gap: "1rem",
+                          flexWrap: "wrap"
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                              VS {rivalName}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.15rem 0.6rem", borderRadius: "10px" }}>
+                              📩 ¡Te ha desafiado!
+                            </span>
+                            <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación (3 Días)"}
+                            </span>
+                            {ch.gameMode === "DOMINATION" && (
+                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(255, 255, 255, 0.08)", color: "var(--color-text-muted)", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                                ⏳ Quedan {daysLeft}d {hoursLeft}h
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                            Territorio: {ch.scopeValues} • {ch.targetScore} Banderas
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Link
+                            href={`/learn/challenge/${ch.id}`}
+                            className="btn btn-primary"
+                            style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: "#10B981", borderColor: "#10B981" }}
+                          >
+                            ⚔️ ¡Aceptar y Jugar!
+                          </Link>
+                          <button
+                            onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName })}
+                            title="Rechazar duelo"
+                            className="btn btn-outline"
+                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
+                          >
+                            🚫 Rechazar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 2. Duelos Comenzados / En Curso */}
+            {challengesData?.active && challengesData.active.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem" }}>
+                  <span style={{ fontSize: "1.1rem" }}>⚔️</span>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#fff" }}>
+                    Duelos Comenzados / En Curso ({challengesData.active.length})
+                  </h3>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {challengesData.active.map((ch: any) => {
+                    const isMyTurn = (ch.challengerId === user.id && !ch.challengerDone) || (ch.challengedId === user.id && !ch.challengedDone);
+                    const isChallenger = ch.challengerId === user.id;
+                    const rivalName = isChallenger ? ch.challenged?.name : ch.challenger?.name;
+
+                    const myDom = isChallenger ? (ch.challengerDominatedCount ?? ch.challengerScore ?? 0) : (ch.challengedDominatedCount ?? ch.challengedScore ?? 0);
+                    const rivalDom = isChallenger ? (ch.challengedDominatedCount ?? ch.challengedScore ?? 0) : (ch.challengerDominatedCount ?? ch.challengerScore ?? 0);
+
+                    const total = ch.totalTerritoryCount || ch.targetScore || 1;
+                    const myPct = isChallenger ? (ch.challengerTerritoryPct ?? Math.round((myDom / total) * 100)) : (ch.challengedTerritoryPct ?? Math.round((myDom / total) * 100));
+                    const rivalPct = isChallenger ? (ch.challengedTerritoryPct ?? Math.round((rivalDom / total) * 100)) : (ch.challengerTerritoryPct ?? Math.round((rivalDom / total) * 100));
+
+                    const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
+                    const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
+                    const myDone = isChallenger ? ch.challengerDone : ch.challengedDone;
+                    const rivalDone = isChallenger ? ch.challengedDone : ch.challengedDone;
+
+                    const formatAcc = (acc: number | null | undefined, done: boolean) => {
+                      if (acc !== null && acc !== undefined) return `${Math.round(acc)}% acierto`;
+                      if (!done) return "Sin jugar";
+                      return "0% acierto";
+                    };
+
+                    const expiresAtMs = ch.createdAt ? new Date(ch.createdAt).getTime() + (3 * 24 * 60 * 60 * 1000) : Date.now();
+                    const remainingMs = Math.max(0, expiresAtMs - Date.now());
+                    const daysLeft = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+                    const hoursLeft = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                    return (
+                      <div
+                        key={ch.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: isMyTurn ? "rgba(239, 68, 68, 0.1)" : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${isMyTurn ? "rgba(239, 68, 68, 0.3)" : "rgba(255,255,255,0.08)"}`,
+                          padding: "1rem 1.25rem",
+                          borderRadius: "14px",
+                          gap: "1rem",
+                          flexWrap: "wrap"
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                              VS {rivalName || "Jugador"}
+                            </span>
+                            <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación (3 Días)"}
+                            </span>
+                            {ch.gameMode === "DOMINATION" && (
+                              <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                                ⏳ Quedan {daysLeft}d {hoursLeft}h
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", marginTop: "0.4rem", display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                            <div>
+                              👑 <strong>Tu progreso:</strong> <span style={{ color: "#10B981", fontWeight: "700" }}>{myDom}/{total} países ({myPct}% territorio)</span> • {formatAcc(myAcc, myDone)}
+                            </div>
+                            <div>
+                              ⚔️ <strong>{rivalName}:</strong> <span style={{ color: "#60A5FA", fontWeight: "700" }}>{rivalDom}/{total} países ({rivalPct}% territorio)</span> • {formatAcc(rivalAcc, rivalDone)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Link
+                            href={`/learn/challenge/${ch.id}`}
+                            className="btn btn-primary"
+                            style={{ padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: "800", background: isMyTurn ? "#EF4444" : "#3B82F6" }}
+                          >
+                            {isMyTurn ? "⚔️ ¡Jugar Mi Ronda!" : "Ver Estado"}
+                          </Link>
+                          <button
+                            onClick={() => setDeclineChallengeTarget({ id: ch.id, rivalName: rivalName || "Jugador" })}
+                            title="Rechazar duelo"
+                            className="btn btn-outline"
+                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.8rem", color: "#EF4444", borderColor: "rgba(239, 68, 68, 0.3)" }}
+                          >
+                            🚫 Rechazar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Duelos Finalizados */}
+            {challengesData?.completed && challengesData.completed.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+                  <FaTrophy size={20} style={{ color: "#F59E0B" }} />
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: "800", margin: 0, color: "#fff" }}>
+                    Duelos Finalizados ({challengesData.completed.length})
+                  </h3>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {challengesData.completed.map((ch: any) => {
+                    const isChallenger = ch.challengerId === user.id;
+                    const rivalName = isChallenger ? ch.challenged.name : ch.challenger.name;
+                    const isWinner = ch.winnerId === user.id;
+                    const isDraw = ch.winnerId === "DRAW";
+                    
+                    const myDom = isChallenger ? (ch.challengerDominatedCount ?? ch.challengerScore ?? 0) : (ch.challengedDominatedCount ?? ch.challengedScore ?? 0);
+                    const rivalDom = isChallenger ? (ch.challengedDominatedCount ?? ch.challengedScore ?? 0) : (ch.challengerDominatedCount ?? ch.challengerScore ?? 0);
+
+                    const total = ch.totalTerritoryCount || ch.targetScore || 1;
+                    const myPct = isChallenger ? (ch.challengerTerritoryPct ?? Math.round((myDom / total) * 100)) : (ch.challengedTerritoryPct ?? Math.round((myDom / total) * 100));
+                    const rivalPct = isChallenger ? (ch.challengedTerritoryPct ?? Math.round((rivalDom / total) * 100)) : (ch.challengerTerritoryPct ?? Math.round((rivalDom / total) * 100));
+
+                    const myAcc = isChallenger ? ch.challengerAccuracy : ch.challengedAccuracy;
+                    const rivalAcc = isChallenger ? ch.challengedAccuracy : ch.challengerAccuracy;
+                    const myDone = isChallenger ? ch.challengerDone : ch.challengedDone;
+                    const rivalDone = isChallenger ? ch.challengedDone : ch.challengerDone;
+
+                    const formatAcc = (acc: number | null | undefined, done: boolean) => {
+                      if (acc !== null && acc !== undefined) return `${Math.round(acc)}% acierto`;
+                      if (!done) return "Sin jugar";
+                      return "0% acierto";
+                    };
+
+                    let resultBadge = "🤝 Empate";
+                    let resultBg = "rgba(245, 158, 11, 0.2)";
+                    let resultColor = "#F59E0B";
+
+                    if (isWinner) {
+                      resultBadge = "🏆 ¡Ganaste el Duelo!";
+                      resultBg = "rgba(16, 185, 129, 0.2)";
+                      resultColor = "#10B981";
+                    } else if (!isDraw && ch.winnerId) {
+                      resultBadge = "❌ Perdiste el Duelo";
+                      resultBg = "rgba(239, 68, 68, 0.2)";
+                      resultColor = "#EF4444";
+                    }
+
+                    return (
+                      <div
+                        key={ch.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: "rgba(255,255,255,0.03)",
+                          border: `1px solid ${resultColor}44`,
+                          padding: "1rem 1.25rem",
+                          borderRadius: "14px",
+                          gap: "1rem",
+                          flexWrap: "wrap"
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                              VS {rivalName || "Jugador"}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", fontWeight: "900", background: resultBg, color: resultColor, padding: "0.2rem 0.6rem", borderRadius: "10px" }}>
+                              {resultBadge}
+                            </span>
+                            <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(255, 255, 255, 0.08)", color: "var(--color-text-muted)", padding: "0.1rem 0.5rem", borderRadius: "10px" }}>
+                              {ch.gameMode === "LIGHTNING" ? "⚡ Relámpago" : "👑 Dominación"}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: "0.825rem", color: "var(--color-text-muted)", marginTop: "0.4rem", display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                            <div>
+                              👑 <strong>Tu progreso:</strong> <span style={{ color: "#10B981", fontWeight: "700" }}>{myDom}/{total} países ({myPct}% territorio)</span> • {formatAcc(myAcc, myDone)}
+                            </div>
+                            <div>
+                              ⚔️ <strong>{rivalName}:</strong> <span style={{ color: "#60A5FA", fontWeight: "700" }}>{rivalDom}/{total} países ({rivalPct}% territorio)</span> • {formatAcc(rivalAcc, rivalDone)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <Link
+                            href={`/learn/challenge/${ch.id}`}
+                            className="btn btn-outline"
+                            style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "0.35rem" }}
+                          >
+                            <span>🗺️ Ver Estadísticas y Mapa</span>
+                          </Link>
+                          <button
+                            onClick={() => handleHideChallenge(ch.id)}
+                            title="Ocultar reto y no verlo nunca más"
+                            className="btn btn-outline"
+                            style={{ padding: "0.5rem 0.75rem", fontSize: "0.8rem", color: "var(--color-text-muted)", borderColor: "rgba(255,255,255,0.15)" }}
+                          >
+                            👁️ Ocultar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* If 0 pending, active, and completed */}
+            {(!challengesData?.pending || challengesData.pending.length === 0) &&
+             (!challengesData?.active || challengesData.active.length === 0) &&
+             (!challengesData?.completed || challengesData.completed.length === 0) && (
+              <div style={{ textAlign: "center", padding: "2.5rem 1rem", background: "rgba(255,255,255,0.02)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <p style={{ color: "var(--color-text-muted)", fontSize: "0.95rem", margin: "0 0 1rem" }}>
+                  {lang === 'en'
+                    ? "You have no active or completed duels yet. Challenge your friends to compete in real-time!"
+                    : "No tienes duelos activos ni finalizados en este momento. ¡Lanza un desafío a tus amigos para competir en tiempo real!"}
+                </p>
+                <button
+                  onClick={() => setShowCreateChallenge(true)}
+                  className="btn btn-primary"
+                  style={{ padding: "0.65rem 1.5rem", fontSize: "0.9rem", fontWeight: "800" }}
+                >
+                  + {lang === 'en' ? "Create 1v1 Duel" : "Crear Duelo 1v1"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "ranking" && (
           <LeaderboardTab currentUserId={user.id} />
         )}
 
