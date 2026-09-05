@@ -62,6 +62,22 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevQuestionIndexRef = useRef<number>(-1);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasAutoJoined = useRef(false);
+
+  // Auto-join room when arriving via invitation link
+  const autoJoinRoom = async () => {
+    if (hasAutoJoined.current) return;
+    hasAutoJoined.current = true;
+    try {
+      await fetch("/api/rooms/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+      });
+    } catch (e) {
+      console.error("Auto-join error:", e);
+    }
+  };
 
   const fetchRoomState = async () => {
     try {
@@ -100,8 +116,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   };
 
   useEffect(() => {
-    fetchRoomState();
-    // Fast polling interval (1s) for real-time multiplayer feel
+    // Auto-join first, then start polling
+    autoJoinRoom().then(() => fetchRoomState());
     const interval = setInterval(fetchRoomState, 1000);
     return () => clearInterval(interval);
   }, [code]);

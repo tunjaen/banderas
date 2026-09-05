@@ -17,6 +17,69 @@ interface RoomSummary {
   createdAt: string;
 }
 
+interface TerritoryItem {
+  id: string;
+  label: string;
+  isContinent?: boolean;
+}
+
+interface TerritoryGroup {
+  title: string;
+  items: TerritoryItem[];
+}
+
+const ROOM_TERRITORY_GROUPS: TerritoryGroup[] = [
+  {
+    title: "🌐 Global",
+    items: [
+      { id: "Mundo", label: "Todo el Mundo (244 Países)", isContinent: true }
+    ]
+  },
+  {
+    title: "🌍 África",
+    items: [
+      { id: "África", label: "Toda África (54 Países)", isContinent: true },
+      { id: "Africa_NorthWest", label: "África Septentrional y Occidental (23 países)" },
+      { id: "Africa_East", label: "África Oriental (20 países)" },
+      { id: "Africa_CentralSouth", label: "África Central y Austral (14 países)" }
+    ]
+  },
+  {
+    title: "🇪🇺 Europa",
+    items: [
+      { id: "Europa", label: "Toda Europa (49 Países)", isContinent: true },
+      { id: "Europe_WestNorth", label: "Europa Occidental y del Norte (21 países)" },
+      { id: "Europe_South", label: "Europa del Sur y Mediterráneo (17 países)" },
+      { id: "Europe_East", label: "Europa Oriental y Central (12 países)" }
+    ]
+  },
+  {
+    title: "🌏 Asia",
+    items: [
+      { id: "Asia", label: "Toda Asia (48 Países)", isContinent: true },
+      { id: "Asia_EastSE", label: "Asia Oriental y Sudeste Asiático (18 países)" },
+      { id: "Asia_SouthCentral", label: "Asia del Sur y Central (13 países)" },
+      { id: "Asia_MiddleEast", label: "Oriente Medio y Cercano Oriente (18 países)" }
+    ]
+  },
+  {
+    title: "🌎 América",
+    items: [
+      { id: "América", label: "Toda América (35 Países)", isContinent: true },
+      { id: "America_NorthCentral", label: "América del Norte y Central (12 países)" },
+      { id: "America_Caribbean", label: "Caribe y Antillas (20 países)" },
+      { id: "America_South", label: "América del Sur (14 países)" }
+    ]
+  },
+  {
+    title: "🏝️ Oceanía e Islas",
+    items: [
+      { id: "Oceanía", label: "Toda Oceanía (14 Países)", isContinent: true },
+      { id: "Islas", label: "Cazatesoros de Islas (77 Países)" }
+    ]
+  }
+];
+
 export default function RoomsHubPage() {
   const router = useRouter();
   const { lang } = useLanguage();
@@ -28,8 +91,16 @@ export default function RoomsHubPage() {
   const [loadingRooms, setLoadingRooms] = useState(true);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedScope, setSelectedScope] = useState("Mundo");
+  const [selectedScopes, setSelectedScopes] = useState<string[]>([]);
   const [selectedQuestionCount, setSelectedQuestionCount] = useState(10);
+
+  const toggleScope = (scopeId: string) => {
+    if (selectedScopes.includes(scopeId)) {
+      setSelectedScopes(selectedScopes.filter(s => s !== scopeId));
+    } else {
+      setSelectedScopes([...selectedScopes, scopeId]);
+    }
+  };
 
   const fetchActiveRooms = async () => {
     try {
@@ -52,14 +123,16 @@ export default function RoomsHubPage() {
   }, []);
 
   const handleCreateRoom = async () => {
+    if (selectedScopes.length === 0) return;
     setLoadingCreate(true);
     setErrorMsg(null);
     try {
+      const scopeValue = selectedScopes.join(",");
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          scope: selectedScope,
+          scope: scopeValue,
           totalQuestions: selectedQuestionCount
         })
       });
@@ -304,7 +377,7 @@ export default function RoomsHubPage() {
       {/* Custom Creation Modal */}
       {showCreateModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(10, 15, 12, 0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
-          <div className="card animate-fade-in" style={{ maxWidth: "480px", width: "100%", padding: "1.75rem", background: "#16221B", border: "1px solid rgba(16, 185, 129, 0.4)", borderRadius: "20px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
+          <div className="card animate-fade-in" style={{ maxWidth: "520px", width: "100%", maxHeight: "90vh", overflowY: "auto", padding: "1.75rem", background: "#16221B", border: "1px solid rgba(16, 185, 129, 0.4)", borderRadius: "20px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
             <button
               onClick={() => setShowCreateModal(false)}
               style={{ position: "absolute", top: "1.25rem", right: "1.25rem", background: "none", border: "none", color: "var(--color-text-muted)", cursor: "pointer", fontSize: "1.2rem" }}
@@ -316,35 +389,67 @@ export default function RoomsHubPage() {
               <span>👑 Configurar Nueva Sala</span>
             </h2>
             <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginBottom: "1.5rem" }}>
-              Elige el continente y la cantidad de preguntas para la batalla multijugador.
+              Elige continentes o bloques territoriales y la cantidad de preguntas para la batalla multijugador.
             </p>
 
-            {/* Scope / Continent Selector */}
+            {/* Scope / Blocks Selector */}
             <div style={{ marginBottom: "1.25rem" }}>
               <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "800", color: "#fff", marginBottom: "0.5rem" }}>
-                🗺️ Selecciona Región / Continente:
+                🗺️ Región / Bloques Territoriales (combina los que quieras):
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                {["Mundo", "Europa", "África", "Asia", "América", "Oceanía", "Islas"].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSelectedScope(s)}
-                    style={{
-                      padding: "0.65rem 0.85rem",
-                      borderRadius: "10px",
-                      fontSize: "0.9rem",
-                      fontWeight: "800",
-                      background: selectedScope === s ? "rgba(16, 185, 129, 0.2)" : "rgba(255,255,255,0.04)",
-                      border: `1.5px solid ${selectedScope === s ? "#10B981" : "rgba(255,255,255,0.08)"}`,
-                      color: selectedScope === s ? "#10B981" : "#fff",
-                      cursor: "pointer"
-                    }}
-                  >
-                    {s}
-                  </button>
+
+              <div style={{ maxHeight: "280px", overflowY: "auto", background: "#0D1410", padding: "0.85rem", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+                {ROOM_TERRITORY_GROUPS.map(group => (
+                  <div key={group.title}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: "800", color: "#60A5FA", textTransform: "uppercase", marginBottom: "0.4rem", paddingLeft: "0.2rem" }}>
+                      {group.title}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.45rem" }}>
+                      {group.items.map(sub => {
+                        const isSelected = selectedScopes.includes(sub.id);
+                        return (
+                          <div
+                            key={sub.id}
+                            onClick={() => toggleScope(sub.id)}
+                            style={{
+                              gridColumn: sub.isContinent ? "1 / -1" : "auto",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.5rem 0.75rem",
+                              borderRadius: "9px",
+                              background: isSelected 
+                                ? (sub.isContinent ? "rgba(16, 185, 129, 0.2)" : "rgba(167, 244, 50, 0.15)") 
+                                : (sub.isContinent ? "rgba(255, 255, 255, 0.05)" : "rgba(255,255,255,0.02)"),
+                              border: `1px solid ${isSelected 
+                                ? (sub.isContinent ? "#10B981" : "rgba(167, 244, 50, 0.4)") 
+                                : (sub.isContinent ? "rgba(255, 255, 255, 0.12)" : "rgba(255,255,255,0.05)")}`,
+                              cursor: "pointer",
+                              fontSize: sub.isContinent ? "0.825rem" : "0.775rem",
+                              fontWeight: isSelected ? "800" : (sub.isContinent ? "700" : "500"),
+                              color: isSelected 
+                                ? (sub.isContinent ? "#10B981" : "var(--color-primary)") 
+                                : "#fff"
+                            }}
+                          >
+                            <div style={{ width: "14px", height: "14px", borderRadius: "4px", border: "1px solid currentColor", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {isSelected && <span style={{ fontSize: "0.6rem" }}>✓</span>}
+                            </div>
+                            <span>{sub.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
               </div>
+
+              {selectedScopes.length > 0 && (
+                <div style={{ marginTop: "0.5rem", padding: "0.5rem 0.75rem", background: "rgba(167, 244, 50, 0.1)", border: "1px solid rgba(167, 244, 50, 0.25)", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "700", color: "var(--color-primary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>✅ {selectedScopes.length} {selectedScopes.length === 1 ? "bloque seleccionado" : "bloques seleccionados"}</span>
+                  <button onClick={() => setSelectedScopes([])} style={{ background: "none", border: "none", color: "#EF4444", fontWeight: "800", cursor: "pointer", fontSize: "0.75rem" }}>Limpiar</button>
+                </div>
+              )}
             </div>
 
             {/* Total Questions Selector */}
@@ -377,12 +482,18 @@ export default function RoomsHubPage() {
 
             <button
               onClick={() => { setShowCreateModal(false); handleCreateRoom(); }}
-              disabled={loadingCreate}
+              disabled={loadingCreate || selectedScopes.length === 0}
               className="btn btn-primary"
-              style={{ width: "100%", padding: "0.95rem", fontSize: "1.05rem", borderRadius: "12px" }}
+              style={{ width: "100%", padding: "0.95rem", fontSize: "1.05rem", borderRadius: "12px", opacity: selectedScopes.length === 0 ? 0.5 : 1 }}
             >
               {loadingCreate ? "Creando..." : "🚀 ¡Crear y Entrar a la Sala!"}
             </button>
+
+            {selectedScopes.length === 0 && (
+              <p style={{ textAlign: "center", color: "#F59E0B", fontSize: "0.8rem", fontWeight: "700", marginTop: "0.5rem" }}>
+                ⚠️ Selecciona al menos un bloque territorial o continente
+              </p>
+            )}
           </div>
         </div>
       )}
