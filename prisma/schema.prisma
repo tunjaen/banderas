@@ -157,3 +157,36 @@ model Challenge {
   challenged      User     @relation("ChallengedUser", fields: [challengedId], references: [id], onDelete: Cascade)
 }
 
+model Room {
+  id                   String       @id @default(cuid())
+  code                 String       @unique
+  hostId               String
+  status               String       @default("WAITING") // WAITING, PLAYING, FINISHED
+  maxPlayers           Int          @default(4)
+  currentQuestionIndex Int          @default(0)
+  totalQuestions       Int          @default(10)
+  flagSequence         String       @default("[]")
+  messagesJson         String       @default("[]")
+  winnerId             String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  players              RoomPlayer[]
+}
+
+model RoomPlayer {
+  id                         String   @id @default(cuid())
+  roomId                     String
+  userId                     String
+  name                       String
+  image                      String?
+  isReady                    Boolean  @default(false)
+  score                      Int      @default(0)
+  isHost                     Boolean  @default(false)
+  lastAnsweredQuestionIndex Int      @default(-1)
+  joinedAt                   DateTime @default(now())
+
+  room                       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+}
+

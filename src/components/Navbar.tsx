@@ -380,6 +380,27 @@ export default function Navbar({ user }: NavbarProps) {
             </Link>
 
             <Link
+              href="/rooms"
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                padding: "0.85rem 1rem",
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2))",
+                border: "1px solid rgba(16, 185, 129, 0.4)",
+                color: "#A7F432",
+                fontWeight: "800",
+                fontSize: "0.95rem",
+                textDecoration: "none"
+              }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>👑</span>
+              <span>Salas Multijugador (2-4 Jugadores)</span>
+            </Link>
+
+            <Link
               href="/learn/continents"
               onClick={() => setIsMobileMenuOpen(false)}
               style={{
