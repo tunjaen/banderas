@@ -484,6 +484,40 @@ export default function DashboardClient({
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
                 
+                {/* 0. Salas Multijugador 2-4 Personas (Featured Card) */}
+                <Link
+                  href="/rooms"
+                  className="card hover-scale"
+                  style={{
+                    textDecoration: "none",
+                    display: "block",
+                    padding: "1.25rem",
+                    border: "1px solid rgba(16, 185, 129, 0.4)",
+                    background: "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.12))",
+                    gridColumn: "1 / -1"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                        <span style={{ fontSize: "1.5rem" }}>👑</span>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(16, 185, 129, 0.25)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.4)", padding: "0.15rem 0.6rem", borderRadius: "20px" }}>
+                          ¡Nuevo Modo 2-4 Jugadores!
+                        </span>
+                      </div>
+                      <h3 style={{ fontSize: "1.25rem", color: "#A7F432", fontWeight: "900", margin: 0 }}>
+                        Salas Multijugador en Vivo (2 a 4 Personas)
+                      </h3>
+                      <p className="text-muted" style={{ fontSize: "0.875rem", margin: "0.3rem 0 0 0" }}>
+                        Crea una sala, ponte en verde (¡LISTO!), chatea con stickers y sé el más rápido en acertar cada bandera en vivo.
+                      </p>
+                    </div>
+                    <div style={{ background: "var(--color-primary)", color: "#000", fontWeight: "900", padding: "0.65rem 1.25rem", borderRadius: "10px", fontSize: "0.95rem", whiteSpace: "nowrap" }}>
+                      Entrar a Salas →
+                    </div>
+                  </div>
+                </Link>
+                
                 {/* 1. Duelos 1v1 */}
                 <div 
                   onClick={() => setShowCreateChallenge(true)} 
