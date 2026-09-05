@@ -216,7 +216,7 @@ function GlobalMapContent() {
         </div>
 
         {/* Legend: Por Descubrir -> Aprendido -> Dominado -> Experto */}
-        <div style={{ display: "flex", flexWrap: "wrap", itemsAlign: "center", gap: "0.6rem 1rem", fontSize: "0.8rem", fontWeight: "700" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.6rem 1rem", fontSize: "0.8rem", fontWeight: "700" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
             <span style={{ width: "10px", height: "10px", background: "#334155", borderRadius: "3px" }}></span>
             <span style={{ color: "var(--color-text-muted)" }}>{lang === 'en' ? "Unseen" : "Por Descubrir"}</span>

@@ -8,7 +8,7 @@ import { useLanguage } from "@/lib/LanguageContext";
 export default function SummaryPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [stats, setStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [stats, setStats] = useState<{ correct: number; total: number; xp: number; continent?: string } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
@@ -50,16 +50,16 @@ export default function SummaryPage() {
     }
   };
 
-  if (!stats) return <div className="container flex-center"><h2>{t.summary.loading}</h2></div>;
+  if (!stats) return <div className="container flex flex-col items-center justify-center" style={{ minHeight: "80vh" }}><h2>{t.summary.loading}</h2></div>;
 
   const accuracy = Math.round((stats.correct / stats.total) * 100) || 0;
   const isPerfect = stats.correct === stats.total && stats.total > 0;
   const isIslas = stats.continent === "Islas";
 
   return (
-    <div className="container flex-center animate-fade-in" style={{ minHeight: "80vh", position: "relative" }}>
+    <div className="container flex flex-col items-center justify-center animate-fade-in" style={{ minHeight: "80vh", position: "relative" }}>
       
-      {/* Visual Confetti / Pirate Emoji Rain Effect for 10/10 */}
+      {/* Visual Confetti / Pirate Emoji Rain Effect */}
       {showConfetti && (
         <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 99, overflow: "hidden" }}>
           {isIslas ? (
@@ -133,7 +133,7 @@ export default function SummaryPage() {
           <div style={{ marginBottom: "1rem" }}>
             <span style={{ fontSize: "4rem" }}>🎉</span>
             <div style={{ color: "#F59E0B", fontWeight: "900", fontSize: "1.25rem", marginTop: "0.5rem" }}>
-              ¡RONDA PERFECTA 10/10!
+              ¡RONDA PERFECTA {stats.correct}/{stats.total}!
             </div>
           </div>
         ) : (

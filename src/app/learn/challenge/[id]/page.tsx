@@ -267,19 +267,46 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
 
   const finishGame = async (finalScore: number) => {
     setIsGameOver(true);
-    setSubmitting(false);
+    setSubmitting(true);
+    const elapsedMs = startTime ? Date.now() - startTime : 5000;
 
     try {
-      const res = await fetch(`/api/challenges/${id}`);
+      const res = await fetch(`/api/challenges/${id}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          score: finalScore,
+          timeMs: elapsedMs,
+          progressData: {
+            hits: myHitsRef.current,
+            correctCount: isDomination ? myCorrectCountRef.current : finalScore,
+            wrongCount: myWrongCountRef.current,
+            recentAnswers: recentAnswersRef.current
+          },
+          isSessionEnd: true
+        })
+      });
+
       if (res.ok) {
         const data = await res.json();
         if (data.challenge) {
           setChallenge(data.challenge);
-          setGameResult({ isFinished: data.challenge.status === "COMPLETED", challenge: data.challenge });
+          setGameResult({ isFinished: data.isFinished || data.challenge.status === "COMPLETED", challenge: data.challenge });
+        }
+      } else {
+        const res2 = await fetch(`/api/challenges/${id}`);
+        if (res2.ok) {
+          const data2 = await res2.json();
+          if (data2.challenge) {
+            setChallenge(data2.challenge);
+            setGameResult({ isFinished: data2.challenge.status === "COMPLETED", challenge: data2.challenge });
+          }
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error submitting finish game score:", e);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -677,7 +704,7 @@ export default function ChallengePlayPage({ params }: { params: Promise<{ id: st
                   ⚡ ¡Respuestas Guardadas Automáticamente!
                 </p>
                 <p style={{ fontSize: "0.85rem", margin: "0.4rem 0 0 0", color: "rgba(255,255,255,0.85)" }}>
-                  Has acumulado <strong>{myCorrectCount} aciertos totales</strong> en este duelo. Tu avance de banderas y mapa está 100% guardado en la nube.
+                  Has acumulado <strong>{isDomination ? myCorrectCount : score} aciertos totales</strong> en este duelo. Tu avance de banderas y mapa está 100% guardado en la nube.
                 </p>
               </div>
             )}

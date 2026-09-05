@@ -201,6 +201,15 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
   };
 
   useEffect(() => {
+    if (limitParam) {
+      const parsed = parseInt(limitParam, 10);
+      if (!isNaN(parsed)) {
+        setActiveLimit(parsed);
+      }
+    }
+  }, [limitParam]);
+
+  useEffect(() => {
     if ((mode === "continents" || mode === "spatial") && !continent && !subregion) {
       setLoading(false);
       return;
