@@ -334,7 +334,7 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
             <div style={{ width: `${(questionCount / roundLimit) * 100}%`, height: "100%", background: "var(--color-primary)", borderRadius: "var(--radius-full)", transition: "width 0.3s ease-in-out" }}></div>
           </div>
           <span style={{ fontSize: "0.8rem", fontWeight: "800", color: "var(--color-primary)", whiteSpace: "nowrap" }}>
-            {questionCount + 1}/{roundLimit}
+            {Math.min(feedback ? questionCount : questionCount + 1, roundLimit)}/{roundLimit}
           </span>
         </div>
 
