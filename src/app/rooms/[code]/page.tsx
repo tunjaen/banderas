@@ -696,9 +696,18 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                       bg = "rgba(16, 185, 129, 0.25)";
                       border = "#10B981";
                     }
+                    if (isSelected && !isTarget) {
+                      bg = "rgba(239, 68, 68, 0.2)";
+                      border = "#EF4444";
+                    }
                   } else if (isSelected) {
-                    bg = "rgba(239, 68, 68, 0.2)";
-                    border = "#EF4444";
+                    if (isTarget) {
+                      bg = "rgba(16, 185, 129, 0.25)";
+                      border = "#10B981";
+                    } else {
+                      bg = "rgba(239, 68, 68, 0.2)";
+                      border = "#EF4444";
+                    }
                   }
 
                   return (

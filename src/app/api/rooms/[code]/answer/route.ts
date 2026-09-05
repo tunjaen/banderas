@@ -3,6 +3,80 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+// Helper: check if all players answered the current question, and if so, auto-advance
+async function checkAndAutoAdvance(roomId: string, questionIndex: number, totalQuestions: number) {
+  const freshRoom = await prisma.room.findUnique({
+    where: { id: roomId },
+    include: { players: true }
+  });
+  if (!freshRoom || freshRoom.status !== "PLAYING") return;
+  // Don't advance if someone already claimed it (correct answer path handles advance)
+  let questions: any[] = [];
+  try { questions = JSON.parse(freshRoom.flagSequence); } catch (e) {}
+  const currentQ = questions[questionIndex];
+  if (currentQ?.claimedBy) return;
+
+  const allAnswered = freshRoom.players.every(p => p.lastAnsweredQuestionIndex >= questionIndex);
+  if (!allAnswered) return;
+
+  // All players answered but nobody got it right — auto-advance
+  const nextIndex = questionIndex + 1;
+  const isGameFinished = nextIndex >= totalQuestions;
+
+  let messages: any[] = [];
+  try { messages = JSON.parse(freshRoom.messagesJson); } catch (e) {}
+
+  const countryName = currentQ?.country?.name || currentQ?.country?.nameEn || "?";
+  messages.push({
+    id: `sys_skip_${Date.now()}`,
+    senderId: "system",
+    senderName: "Sistema",
+    text: `⏭️ Nadie acertó la bandera (${countryName}). ¡Siguiente pregunta!`,
+    emoji: "😬",
+    timestamp: Date.now()
+  });
+
+  let winnerId: string | null = null;
+  let roomStatus = freshRoom.status;
+
+  if (isGameFinished) {
+    roomStatus = "FINISHED";
+    const sortedPlayers = [...freshRoom.players].sort((a, b) => b.score - a.score);
+
+    const topPlayer = sortedPlayers[0];
+    if (topPlayer) {
+      winnerId = topPlayer.userId;
+    }
+
+    for (const p of sortedPlayers) {
+      const xpEarned = (p.score * 15) + (p.userId === winnerId ? 30 : 10);
+      await prisma.user.update({
+        where: { id: p.userId },
+        data: { xp: { increment: xpEarned } }
+      });
+    }
+
+    messages.push({
+      id: `sys_${Date.now()}_win`,
+      senderId: "system",
+      senderName: "Sistema",
+      text: `👑 ¡PARTIDA FINALIZADA! Ganador: ${topPlayer ? topPlayer.name : "Empate"}.`,
+      emoji: "🎉",
+      timestamp: Date.now()
+    });
+  }
+
+  await prisma.room.update({
+    where: { id: roomId },
+    data: {
+      messagesJson: JSON.stringify(messages),
+      currentQuestionIndex: isGameFinished ? questionIndex : nextIndex,
+      status: roomStatus,
+      winnerId
+    }
+  });
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ code: string }> }
@@ -63,6 +137,10 @@ export async function POST(
         where: { id: me.id },
         data: { lastAnsweredQuestionIndex: questionIndex }
       });
+
+      // Check if all players have now answered — auto-advance if so
+      await checkAndAutoAdvance(room.id, questionIndex, room.totalQuestions);
+
       return NextResponse.json({ isTimeout: true, isCorrect: false });
     }
 
@@ -99,6 +177,9 @@ export async function POST(
         where: { id: room.id },
         data: { messagesJson: JSON.stringify(messages) }
       });
+
+      // Check if all players have now answered — auto-advance if so
+      await checkAndAutoAdvance(room.id, questionIndex, room.totalQuestions);
 
       return NextResponse.json({ isCorrect: false, penaltyApplied: true });
     }
