@@ -482,41 +482,7 @@ export default function DashboardClient({
                 </h2>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
-                
-                {/* 0. Salas Multijugador 2-4 Personas (Featured Card) */}
-                <Link
-                  href="/rooms"
-                  className="card hover-scale"
-                  style={{
-                    textDecoration: "none",
-                    display: "block",
-                    padding: "1.25rem",
-                    border: "1px solid rgba(16, 185, 129, 0.4)",
-                    background: "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.12))",
-                    gridColumn: "1 / -1"
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                        <span style={{ fontSize: "1.5rem" }}>👑</span>
-                        <span style={{ fontSize: "0.75rem", fontWeight: "800", background: "rgba(16, 185, 129, 0.25)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.4)", padding: "0.15rem 0.6rem", borderRadius: "20px" }}>
-                          ¡Nuevo Modo 2-4 Jugadores!
-                        </span>
-                      </div>
-                      <h3 style={{ fontSize: "1.25rem", color: "#A7F432", fontWeight: "900", margin: 0 }}>
-                        Salas Multijugador en Vivo (2 a 4 Personas)
-                      </h3>
-                      <p className="text-muted" style={{ fontSize: "0.875rem", margin: "0.3rem 0 0 0" }}>
-                        Crea una sala, ponte en verde (¡LISTO!), chatea con stickers y sé el más rápido en acertar cada bandera en vivo.
-                      </p>
-                    </div>
-                    <div style={{ background: "var(--color-primary)", color: "#000", fontWeight: "900", padding: "0.65rem 1.25rem", borderRadius: "10px", fontSize: "0.95rem", whiteSpace: "nowrap" }}>
-                      Entrar a Salas →
-                    </div>
-                  </div>
-                </Link>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
                 
                 {/* 1. Duelos 1v1 */}
                 <div 
@@ -545,11 +511,30 @@ export default function DashboardClient({
                   </p>
                 </div>
 
-                {/* 2. Repasar Errores */}
-                <Link href="/learn/weaknesses" className="card hover-scale" style={{ textDecoration: "none", display: "block", padding: "1.25rem", border: "1px solid rgba(239, 68, 68, 0.3)", background: "linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--color-surface))" }}>
-                  <FaRedo size={26} className="text-danger" style={{ marginBottom: "0.75rem" }} />
-                  <h3 style={{ fontSize: "1.1rem", color: "#EF4444", fontWeight: "800" }}>{t.dashboard.modes.weaknesses.title}</h3>
-                  <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>{t.dashboard.modes.weaknesses.desc}</p>
+                {/* 2. Salas Multijugador (2-4 Personas) */}
+                <Link
+                  href="/rooms"
+                  className="card hover-scale"
+                  style={{
+                    textDecoration: "none",
+                    display: "block",
+                    padding: "1.25rem",
+                    border: "1px solid rgba(16, 185, 129, 0.4)",
+                    background: "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.12))"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                    <span style={{ fontSize: "1.5rem" }}>👑</span>
+                    <span style={{ fontSize: "0.7rem", fontWeight: "800", background: "rgba(16, 185, 129, 0.25)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.4)", padding: "0.15rem 0.5rem", borderRadius: "20px" }}>
+                      ¡Nuevo 2-4!
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: "1.1rem", color: "#A7F432", fontWeight: "800" }}>
+                    Salas Multijugador (2-4)
+                  </h3>
+                  <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                    Crea tu sala, ponte en verde (¡LISTO!), chatea con stickers y sé el más rápido en acertar en vivo.
+                  </p>
                 </Link>
 
                 {/* 3. Mapa Espacial */}
@@ -557,6 +542,13 @@ export default function DashboardClient({
                   <FaMapMarkerAlt size={26} className="text-success" style={{ marginBottom: "0.75rem" }} />
                   <h3 style={{ fontSize: "1.1rem", color: "#10B981", fontWeight: "800" }}>{t.dashboard.modes.spatial.title}</h3>
                   <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>{t.dashboard.modes.spatial.desc}</p>
+                </Link>
+
+                {/* 4. Repasar Errores (Al final) */}
+                <Link href="/learn/weaknesses" className="card hover-scale" style={{ textDecoration: "none", display: "block", padding: "1.25rem", border: "1px solid rgba(239, 68, 68, 0.3)", background: "linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--color-surface))" }}>
+                  <FaRedo size={26} className="text-danger" style={{ marginBottom: "0.75rem" }} />
+                  <h3 style={{ fontSize: "1.1rem", color: "#EF4444", fontWeight: "800" }}>{t.dashboard.modes.weaknesses.title}</h3>
+                  <p className="text-muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>{t.dashboard.modes.weaknesses.desc}</p>
                 </Link>
 
               </div>

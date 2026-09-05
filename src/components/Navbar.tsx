@@ -31,6 +31,8 @@ export default function Navbar({ user }: NavbarProps) {
   const [showOnlineModal, setShowOnlineModal] = useState(false);
   const [pendingChallengesCount, setPendingChallengesCount] = useState(0);
 
+  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
+
   useEffect(() => {
     const saved = localStorage.getItem("app-timer-enabled");
     if (saved === "true") setIsTimerEnabled(true);
@@ -49,13 +51,19 @@ export default function Navbar({ user }: NavbarProps) {
           const chData = await chRes.json();
           setPendingChallengesCount(chData.pendingCount || 0);
         }
+
+        const invRes = await fetch("/api/invitations");
+        if (invRes.ok) {
+          const invData = await invRes.json();
+          setPendingInvitations(invData.invitations || []);
+        }
       } catch (e) {
         console.error("Error fetching online status:", e);
       }
     };
 
     fetchOnline();
-    const interval = setInterval(fetchOnline, 30000); // Poll every 30 seconds
+    const interval = setInterval(fetchOnline, 5000); // Poll every 5 seconds for invitations & status
     return () => clearInterval(interval);
   }, []);
 
@@ -662,6 +670,57 @@ export default function Navbar({ user }: NavbarProps) {
               {lang === 'en' ? "Close" : "Cerrar"}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Floating Room Invitation Toast Banner */}
+      {pendingInvitations && pendingInvitations.length > 0 && (
+        <div
+          className="animate-scale-up"
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            zIndex: 999999,
+            background: "linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(59, 130, 246, 0.95))",
+            border: "2px solid #10B981",
+            color: "#FFF",
+            borderRadius: "16px",
+            padding: "0.85rem 1.25rem",
+            boxShadow: "0 10px 35px rgba(16, 185, 129, 0.5)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            maxWidth: "380px"
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: "900", fontSize: "0.95rem" }}>
+              👑 ¡Invitación a Sala Multijugador!
+            </div>
+            <div style={{ fontSize: "0.825rem", opacity: 0.9, marginTop: "0.15rem" }}>
+              <strong>{pendingInvitations[0].hostName}</strong> te ha invitado a unirte a la Sala <strong>{pendingInvitations[0].code}</strong>.
+            </div>
+          </div>
+          <Link
+            href={`/rooms/${pendingInvitations[0].code}`}
+            onClick={() => setPendingInvitations([])}
+            style={{
+              padding: "0.5rem 0.85rem",
+              fontSize: "0.8rem",
+              background: "#fff",
+              color: "#000",
+              fontWeight: "900",
+              borderRadius: "10px",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
+            }}
+          >
+            ¡Ir a la Sala! →
+          </Link>
         </div>
       )}
     </>

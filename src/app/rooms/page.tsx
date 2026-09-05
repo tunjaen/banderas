@@ -27,6 +27,10 @@ export default function RoomsHubPage() {
   const [activeRooms, setActiveRooms] = useState<RoomSummary[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
 
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedScope, setSelectedScope] = useState("Mundo");
+  const [selectedQuestionCount, setSelectedQuestionCount] = useState(10);
+
   const fetchActiveRooms = async () => {
     try {
       const res = await fetch("/api/rooms");
@@ -51,7 +55,14 @@ export default function RoomsHubPage() {
     setLoadingCreate(true);
     setErrorMsg(null);
     try {
-      const res = await fetch("/api/rooms", { method: "POST" });
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scope: selectedScope,
+          totalQuestions: selectedQuestionCount
+        })
+      });
       const data = await res.json();
       if (res.ok && data.room) {
         router.push(`/rooms/${data.room.code}`);
@@ -132,19 +143,13 @@ export default function RoomsHubPage() {
             </div>
 
             <button
-              onClick={handleCreateRoom}
+              onClick={() => setShowCreateModal(true)}
               disabled={loadingCreate}
               className="btn btn-primary hover-scale"
               style={{ width: "100%", padding: "0.95rem", fontSize: "1.05rem", borderRadius: "12px", gap: "0.5rem" }}
             >
-              {loadingCreate ? (
-                <span>Creando sala...</span>
-              ) : (
-                <>
-                  <span>👑 Crear Sala (Anfitrión)</span>
-                  <FaArrowRight />
-                </>
-              )}
+              <span>👑 Configurar y Crear Sala (Anfitrión)</span>
+              <FaArrowRight />
             </button>
           </div>
 
@@ -158,7 +163,7 @@ export default function RoomsHubPage() {
                 Unirse con Código
               </h2>
               <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", lineHeight: "1.5", marginBottom: "1rem" }}>
-                ¿Tienes el código de sala de un amigo? Ingrésalo a continuación para entrar de inmediato.
+                ¿Tienes el código de sala de 4 caracteres (ej. 8K2X) de un amigo? Ingrésalo a continuación para entrar de inmediato.
               </p>
             </div>
 
@@ -167,8 +172,8 @@ export default function RoomsHubPage() {
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="EJEMPLO: R-4921"
-                maxLength={6}
+                placeholder="EJEMPLO: 8K2X"
+                maxLength={4}
                 style={{
                   width: "100%",
                   padding: "0.85rem 1rem",
@@ -176,9 +181,9 @@ export default function RoomsHubPage() {
                   border: "1.5px solid rgba(59, 130, 246, 0.4)",
                   borderRadius: "10px",
                   color: "#fff",
-                  fontSize: "1.1rem",
-                  fontWeight: "800",
-                  letterSpacing: "2px",
+                  fontSize: "1.3rem",
+                  fontWeight: "900",
+                  letterSpacing: "3px",
                   textAlign: "center",
                   textTransform: "uppercase"
                 }}
@@ -228,7 +233,7 @@ export default function RoomsHubPage() {
               <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>🏟️</div>
               <h4 style={{ color: "#fff", fontWeight: "700", margin: 0 }}>No hay salas públicas abiertas en este momento</h4>
               <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
-                ¡Sé el primero en hacer clic en **Crear Nueva Sala** arriba e invita a tus amigos!
+                ¡Sé el primero en hacer clic en **Configurar y Crear Sala** arriba e invita a tus amigos!
               </p>
             </div>
           ) : (
@@ -257,7 +262,7 @@ export default function RoomsHubPage() {
                   >
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-                        <span style={{ fontWeight: "900", fontSize: "1.1rem", color: "var(--color-primary)", letterSpacing: "1px" }}>
+                        <span style={{ fontWeight: "900", fontSize: "1.2rem", color: "var(--color-primary)", letterSpacing: "2px" }}>
                           {r.code}
                         </span>
                         <span style={{ fontSize: "0.75rem", fontWeight: "800", padding: "0.15rem 0.5rem", borderRadius: "12px", background: isFull ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)", color: isFull ? "#EF4444" : "#10B981" }}>
@@ -295,6 +300,93 @@ export default function RoomsHubPage() {
         </div>
 
       </main>
+
+      {/* Custom Creation Modal */}
+      {showCreateModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(10, 15, 12, 0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div className="card animate-fade-in" style={{ maxWidth: "480px", width: "100%", padding: "1.75rem", background: "#16221B", border: "1px solid rgba(16, 185, 129, 0.4)", borderRadius: "20px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
+            <button
+              onClick={() => setShowCreateModal(false)}
+              style={{ position: "absolute", top: "1.25rem", right: "1.25rem", background: "none", border: "none", color: "var(--color-text-muted)", cursor: "pointer", fontSize: "1.2rem" }}
+            >
+              ✕
+            </button>
+
+            <h2 style={{ fontSize: "1.5rem", fontWeight: "900", color: "#fff", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span>👑 Configurar Nueva Sala</span>
+            </h2>
+            <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginBottom: "1.5rem" }}>
+              Elige el continente y la cantidad de preguntas para la batalla multijugador.
+            </p>
+
+            {/* Scope / Continent Selector */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "800", color: "#fff", marginBottom: "0.5rem" }}>
+                🗺️ Selecciona Región / Continente:
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                {["Mundo", "Europa", "África", "Asia", "América", "Oceanía", "Islas"].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSelectedScope(s)}
+                    style={{
+                      padding: "0.65rem 0.85rem",
+                      borderRadius: "10px",
+                      fontSize: "0.9rem",
+                      fontWeight: "800",
+                      background: selectedScope === s ? "rgba(16, 185, 129, 0.2)" : "rgba(255,255,255,0.04)",
+                      border: `1.5px solid ${selectedScope === s ? "#10B981" : "rgba(255,255,255,0.08)"}`,
+                      color: selectedScope === s ? "#10B981" : "#fff",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Total Questions Selector */}
+            <div style={{ marginBottom: "1.75rem" }}>
+              <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "800", color: "#fff", marginBottom: "0.5rem" }}>
+                🎯 Cantidad de Preguntas:
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
+                {[10, 15, 25, 50].map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => setSelectedQuestionCount(q)}
+                    style={{
+                      padding: "0.65rem",
+                      borderRadius: "10px",
+                      fontSize: "0.9rem",
+                      fontWeight: "900",
+                      background: selectedQuestionCount === q ? "rgba(59, 130, 246, 0.25)" : "rgba(255,255,255,0.04)",
+                      border: `1.5px solid ${selectedQuestionCount === q ? "#3B82F6" : "rgba(255,255,255,0.08)"}`,
+                      color: selectedQuestionCount === q ? "#60A5FA" : "#fff",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {q} Qs
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => { setShowCreateModal(false); handleCreateRoom(); }}
+              disabled={loadingCreate}
+              className="btn btn-primary"
+              style={{ width: "100%", padding: "0.95rem", fontSize: "1.05rem", borderRadius: "12px" }}
+            >
+              {loadingCreate ? "Creando..." : "🚀 ¡Crear y Entrar a la Sala!"}
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

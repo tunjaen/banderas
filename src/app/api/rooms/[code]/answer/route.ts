@@ -19,7 +19,7 @@ export async function POST(
     const cleanCode = code.trim().toUpperCase();
 
     const body = await req.json();
-    const { countryId, questionIndex } = body;
+    const { countryId, questionIndex, isTimeout = false } = body;
 
     const room = await prisma.room.findUnique({
       where: { code: cleanCode },
@@ -54,37 +54,111 @@ export async function POST(
       return NextResponse.json({ message: "Pregunta no encontrada" }, { status: 404 });
     }
 
-    const isCorrect = currentQ.country.id === countryId;
+    let messages: any[] = [];
+    try { messages = JSON.parse(room.messagesJson); } catch (e) {}
 
-    if (!isCorrect) {
-      // Mark player answered wrong
+    // CASE 1: TIMEOUT (Inhabilitar opción sin penalización)
+    if (isTimeout) {
       await prisma.roomPlayer.update({
         where: { id: me.id },
         data: { lastAnsweredQuestionIndex: questionIndex }
       });
-      return NextResponse.json({ isCorrect: false, isFirst: false });
+      return NextResponse.json({ isTimeout: true, isCorrect: false });
     }
+
+    const isCorrect = currentQ.country.id === countryId;
+
+    // CASE 2: INCORRECT ANSWER (Fallo -> Puntaje suma a los oponentes)
+    if (!isCorrect) {
+      await prisma.roomPlayer.update({
+        where: { id: me.id },
+        data: { lastAnsweredQuestionIndex: questionIndex }
+      });
+
+      // Sum +1 point to all opponents in the room
+      await prisma.roomPlayer.updateMany({
+        where: {
+          roomId: room.id,
+          userId: { not: userId }
+        },
+        data: {
+          score: { increment: 1 }
+        }
+      });
+
+      messages.push({
+        id: `sys_${Date.now()}`,
+        senderId: "system",
+        senderName: "Sistema",
+        text: `💥 ¡${me.name} cometió un error! (+1 punto para sus oponentes)`,
+        emoji: "💣",
+        timestamp: Date.now()
+      });
+
+      await prisma.room.update({
+        where: { id: room.id },
+        data: { messagesJson: JSON.stringify(messages) }
+      });
+
+      return NextResponse.json({ isCorrect: false, penaltyApplied: true });
+    }
+
+    // CASE 3: CORRECT ANSWER (Acierto)
+    const now = Date.now();
 
     // Check if question was already claimed by another player
     if (currentQ.claimedBy) {
+      const timeDiff = now - (currentQ.claimedBy.timestamp || 0);
+
+      // If answered within simultaneous window (2.5 seconds), award point to this player too!
+      if (timeDiff <= 2500) {
+        const newScore = me.score + 1;
+        await prisma.roomPlayer.update({
+          where: { id: me.id },
+          data: {
+            score: newScore,
+            lastAnsweredQuestionIndex: questionIndex
+          }
+        });
+
+        messages.push({
+          id: `sys_${Date.now()}`,
+          senderId: "system",
+          senderName: "Sistema",
+          text: `✨ ¡${me.name} también acertó la bandera a tiempo (+1 punto)!`,
+          emoji: "🎉",
+          timestamp: Date.now()
+        });
+
+        await prisma.room.update({
+          where: { id: room.id },
+          data: { messagesJson: JSON.stringify(messages) }
+        });
+
+        return NextResponse.json({
+          isCorrect: true,
+          isSimultaneous: true,
+          newScore
+        });
+      }
+
       return NextResponse.json({
         isCorrect: true,
-        isFirst: false,
+        isLate: true,
         claimedBy: currentQ.claimedBy
       });
     }
 
-    // CLAIM POINT! This player is the FIRST to guess correctly
+    // FIRST TO GUESS CORRECTLY!
     currentQ.claimedBy = {
       userId,
       name: me.name,
-      timestamp: Date.now()
+      timestamp: now
     };
 
     const nextIndex = questionIndex + 1;
     const isGameFinished = nextIndex >= room.totalQuestions;
 
-    // Update player score
     const newScore = me.score + 1;
     await prisma.roomPlayer.update({
       where: { id: me.id },
@@ -94,14 +168,11 @@ export async function POST(
       }
     });
 
-    // Chat system notification
-    let messages: any[] = [];
-    try { messages = JSON.parse(room.messagesJson); } catch (e) {}
     messages.push({
       id: `sys_${Date.now()}`,
       senderId: "system",
       senderName: "Sistema",
-      text: `⚡ ¡${me.name} fue el más rápido y se lleva el punto! (${currentQ.country.name || currentQ.country.nameEn})`,
+      text: `⚡ ¡${me.name} fue el más rápido y acertó la bandera (+1 punto)! (${currentQ.country.name || currentQ.country.nameEn})`,
       emoji: "🏆",
       timestamp: Date.now()
     });
@@ -111,7 +182,6 @@ export async function POST(
 
     if (isGameFinished) {
       roomStatus = "FINISHED";
-      // Find winner by highest score
       const updatedPlayers = await prisma.roomPlayer.findMany({
         where: { roomId: room.id },
         orderBy: { score: "desc" }
@@ -122,7 +192,6 @@ export async function POST(
         winnerId = topPlayer.userId;
       }
 
-      // Award XP to participants
       for (const p of updatedPlayers) {
         const xpEarned = (p.score * 15) + (p.userId === winnerId ? 30 : 10);
         await prisma.user.update({

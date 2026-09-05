@@ -161,6 +161,7 @@ model Room {
   id                   String       @id @default(cuid())
   code                 String       @unique
   hostId               String
+  scope                String       @default("Mundo")
   status               String       @default("WAITING") // WAITING, PLAYING, FINISHED
   maxPlayers           Int          @default(4)
   currentQuestionIndex Int          @default(0)
@@ -188,5 +189,16 @@ model RoomPlayer {
   room                       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, userId])
+}
+
+model RoomInvitation {
+  id           String   @id @default(cuid())
+  roomId       String
+  code         String
+  hostId       String
+  hostName     String
+  targetUserId String
+  status       String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  createdAt    DateTime @default(now())
 }
 

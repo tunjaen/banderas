@@ -50,9 +50,18 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [isAnswering, setIsAnswering] = useState(false);
   const [pointBanner, setPointBanner] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(10);
+  const [isTimedOut, setIsTimedOut] = useState(false);
+
+  // Invite modal state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [onlinePlayers, setOnlinePlayers] = useState<any[]>([]);
+  const [loadingOnline, setLoadingOnline] = useState(false);
+  const [invitedUserIds, setInvitedUserIds] = useState<Record<string, boolean>>({});
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevQuestionIndexRef = useRef<number>(-1);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchRoomState = async () => {
     try {
@@ -66,19 +75,19 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         setIsMeHost(data.isMeHost);
         setIsMeReady(data.isMeReady);
 
-        // Reset selected option when question advances
+        // Reset selected option & timer when question advances
         if (data.room.currentQuestionIndex !== prevQuestionIndexRef.current) {
           prevQuestionIndexRef.current = data.room.currentQuestionIndex;
           setSelectedOptionId(null);
           setIsAnswering(false);
+          setIsTimedOut(false);
+          setTimeLeft(10);
         }
 
         // Check if current question was just claimed by a player
         if (data.currentQuestion?.claimedBy && data.currentQuestion.claimedBy.name) {
           const winnerName = data.currentQuestion.claimedBy.name;
           setPointBanner(`⚡ ¡${winnerName} fue el más rápido y acertó la bandera (+1 punto)!`);
-        } else {
-          setPointBanner(null);
         }
       } else if (res.status === 404) {
         router.push("/rooms");
@@ -100,6 +109,79 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  // 10-Second Timer Effect per question during PLAYING state
+  useEffect(() => {
+    if (!room || room.status !== "PLAYING" || selectedOptionId !== null || isTimedOut) {
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current as NodeJS.Timeout);
+          handleTimeout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [room?.status, room?.currentQuestionIndex, selectedOptionId, isTimedOut]);
+
+  const handleTimeout = async () => {
+    if (isTimedOut || selectedOptionId !== null) return;
+    setIsTimedOut(true);
+    setPointBanner("⏰ ¡Tiempo agotado! Tu respuesta fue inhabilitada (sin penalización).");
+
+    try {
+      await fetch(`/api/rooms/${code}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionIndex: room.currentQuestionIndex,
+          isTimeout: true
+        })
+      });
+      fetchRoomState();
+    } catch (e) {
+      console.error("Error sending timeout:", e);
+    }
+  };
+
+  const openInviteModal = async () => {
+    setShowInviteModal(true);
+    setLoadingOnline(true);
+    try {
+      const res = await fetch("/api/online");
+      if (res.ok) {
+        const data = await res.json();
+        setOnlinePlayers(data.users || []);
+      }
+    } catch (e) {
+      console.error("Error fetching online players:", e);
+    } finally {
+      setLoadingOnline(false);
+    }
+  };
+
+  const handleSendInvite = async (targetUserId: string) => {
+    try {
+      const res = await fetch(`/api/rooms/${code}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId })
+      });
+      if (res.ok) {
+        setInvitedUserIds(prev => ({ ...prev, [targetUserId]: true }));
+      }
+    } catch (e) {
+      console.error("Error sending room invite:", e);
+    }
+  };
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(code);
@@ -151,7 +233,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   };
 
   const handleSelectOption = async (optionId: string) => {
-    if (isAnswering || selectedOptionId !== null || !currentQuestion) return;
+    if (isAnswering || selectedOptionId !== null || !currentQuestion || isTimedOut) return;
 
     setSelectedOptionId(optionId);
     setIsAnswering(true);
@@ -169,6 +251,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       const data = await res.json();
       if (data.isCorrect && data.isFirst) {
         setPointBanner(`⚡ ¡Fuiste el más rápido! (+1 punto)`);
+      } else if (data.isCorrect && data.isSimultaneous) {
+        setPointBanner(`✨ ¡Acierto simultáneo! (+1 punto)`);
+      } else if (!data.isCorrect) {
+        setPointBanner(`💥 ¡Error! +1 punto otorgado a todos tus oponentes.`);
       }
 
       fetchRoomState();
@@ -212,8 +298,12 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         {/* Top Room Header Bar */}
         <div style={{ background: "rgba(13, 20, 16, 0.9)", border: "1px solid rgba(255,255,255,0.08)", padding: "0.85rem 1.25rem", borderRadius: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.25rem" }}>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: "800", textTransform: "uppercase" }}>
-              👑 Sala Multijugador (2-4 Jugadores)
+            <div style={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: "800", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span>👑 Sala Multijugador</span>
+              <span>•</span>
+              <span style={{ color: "#fff" }}>📍 {room.scope || "Mundo"}</span>
+              <span>•</span>
+              <span style={{ color: "#fff" }}>🎯 {room.totalQuestions} Preguntas</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginTop: "0.15rem" }}>
               <span style={{ fontSize: "1.4rem", fontWeight: "900", color: "#fff", letterSpacing: "1px" }}>
@@ -231,6 +321,15 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            {isWaiting && (
+              <button
+                onClick={openInviteModal}
+                style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", color: "#fff", border: "none", padding: "0.4rem 0.85rem", borderRadius: "20px", fontSize: "0.85rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", boxShadow: "0 0 15px rgba(59, 130, 246, 0.4)" }}
+              >
+                <span>📩 Invitar Jugadores</span>
+              </button>
+            )}
+
             <span style={{ fontSize: "0.9rem", fontWeight: "800", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "0.4rem 0.85rem", borderRadius: "20px", color: "#fff" }}>
               👥 {players.length}/4 Jugadores
             </span>
@@ -346,9 +445,12 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                         <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", fontWeight: "600" }}>
                           Slot Libre #{idx + 1}
                         </span>
-                        <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-                          Esperando jugador...
-                        </span>
+                        <button
+                          onClick={openInviteModal}
+                          style={{ marginTop: "0.5rem", background: "rgba(59, 130, 246, 0.2)", border: "1px solid rgba(59, 130, 246, 0.4)", color: "#60A5FA", padding: "0.25rem 0.6rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer" }}
+                        >
+                          + Invitar
+                        </button>
                       </div>
                     );
                   }
@@ -503,34 +605,44 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         {isPlaying && currentQuestion && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", flex: 1 }}>
             
-            {/* Live Scoreboard Bar */}
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${players.length}, 1fr)`, gap: "0.75rem" }}>
-              {players.map((p) => (
-                <div
-                  key={p.id}
-                  style={{
-                    background: "rgba(13, 20, 16, 0.9)",
-                    border: `2px solid ${p.userId === currentUserId ? "var(--color-primary)" : "rgba(255,255,255,0.1)"}`,
-                    borderRadius: "12px",
-                    padding: "0.6rem 0.85rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between"
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#10B981", color: "#000", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem" }}>
-                      {p.name.charAt(0).toUpperCase()}
+            {/* Live Scoreboard & Timer Bar */}
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ flex: 1, display: "grid", gridTemplateColumns: `repeat(${players.length}, 1fr)`, gap: "0.75rem" }}>
+                {players.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      background: "rgba(13, 20, 16, 0.9)",
+                      border: `2px solid ${p.userId === currentUserId ? "var(--color-primary)" : "rgba(255,255,255,0.1)"}`,
+                      borderRadius: "12px",
+                      padding: "0.6rem 0.85rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#10B981", color: "#000", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem" }}>
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#fff", maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {p.name}
+                      </span>
                     </div>
-                    <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#fff", maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {p.name}
+                    <span style={{ fontSize: "1.1rem", fontWeight: "900", color: "var(--color-primary)" }}>
+                      {p.score} pts
                     </span>
                   </div>
-                  <span style={{ fontSize: "1.1rem", fontWeight: "900", color: "var(--color-primary)" }}>
-                    {p.score} pts
-                  </span>
+                ))}
+              </div>
+
+              {/* 10s Countdown Bar */}
+              <div style={{ background: "rgba(13, 20, 16, 0.9)", border: `2px solid ${timeLeft <= 3 ? "#EF4444" : "rgba(255,255,255,0.15)"}`, borderRadius: "12px", padding: "0.6rem 1rem", minWidth: "90px", textAlign: "center" }}>
+                <div style={{ fontSize: "0.65rem", textTransform: "uppercase", color: "var(--color-text-muted)", fontWeight: "800" }}>Tiempo</div>
+                <div style={{ fontSize: "1.2rem", fontWeight: "900", color: timeLeft <= 3 ? "#EF4444" : "var(--color-primary)" }}>
+                  ⏱️ {timeLeft}s
                 </div>
-              ))}
+              </div>
             </div>
 
             {/* Question Card */}
@@ -538,6 +650,12 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               <div style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--color-primary)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
                 ⚡ Pregunta {room.currentQuestionIndex + 1} de {room.totalQuestions} • ¡El primero en acertar gana el punto!
               </div>
+
+              {isTimedOut && (
+                <div style={{ color: "#EF4444", fontWeight: "800", fontSize: "0.9rem", marginBottom: "0.75rem", background: "rgba(239, 68, 68, 0.1)", padding: "0.4rem", borderRadius: "8px" }}>
+                  ⏰ ¡Tiempo agotado! Tu respuesta fue bloqueada para esta pregunta.
+                </div>
+              )}
 
               {currentQuestion.country && (
                 <img
@@ -571,7 +689,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                     <button
                       key={opt.id}
                       onClick={() => handleSelectOption(opt.id)}
-                      disabled={selectedOptionId !== null || !!currentQuestion.claimedBy || isAnswering}
+                      disabled={selectedOptionId !== null || !!currentQuestion.claimedBy || isAnswering || isTimedOut}
                       style={{
                         padding: "1.1rem 1rem",
                         borderRadius: "12px",
@@ -580,7 +698,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                         color: "#fff",
                         fontWeight: "800",
                         fontSize: "1rem",
-                        cursor: (selectedOptionId !== null || currentQuestion.claimedBy) ? "default" : "pointer",
+                        cursor: (selectedOptionId !== null || currentQuestion.claimedBy || isTimedOut) ? "default" : "pointer",
+                        opacity: isTimedOut ? 0.4 : 1,
                         transition: "all 0.2s ease-in-out"
                       }}
                     >
@@ -654,6 +773,85 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         )}
 
       </main>
+
+      {/* Invite Friends Modal */}
+      {showInviteModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "1rem" }}>
+          <div className="animate-scale-up" style={{ background: "rgba(13, 20, 16, 0.98)", border: "1px solid rgba(59, 130, 246, 0.4)", borderRadius: "20px", padding: "1.75rem", maxWidth: "480px", width: "100%", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <h3 style={{ fontSize: "1.25rem", fontWeight: "900", color: "#fff", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span>📩 Invitar Jugadores a la Sala</span>
+              </h3>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                style={{ background: "none", border: "none", color: "var(--color-text-muted)", fontSize: "1.2rem", cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1.25rem" }}>
+              Envía una notificación instantánea a otros jugadores para que accedan directamente con un solo clic.
+            </p>
+
+            {loadingOnline ? (
+              <div style={{ textAlign: "center", padding: "2rem", color: "var(--color-text-muted)" }}>
+                Cargando jugadores disponibles...
+              </div>
+            ) : onlinePlayers.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "2rem", color: "var(--color-text-muted)", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: "1px dashed rgba(255,255,255,0.1)" }}>
+                <p style={{ fontWeight: "700" }}>No hay otros jugadores en línea en este momento.</p>
+                <p style={{ fontSize: "0.8rem", marginTop: "0.3rem" }}>¡Puedes compartir el código de sala <strong style={{ color: "var(--color-primary)" }}>{code}</strong>!</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", maxHeight: "300px", overflowY: "auto" }}>
+                {onlinePlayers.map((u) => {
+                  const isInvited = invitedUserIds[u.id];
+                  const isInRoom = players.some(p => p.userId === u.id);
+
+                  return (
+                    <div
+                      key={u.id}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "0.75rem 1rem", borderRadius: "12px" }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#3B82F6", color: "#fff", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem" }}>
+                          {u.name ? u.name.charAt(0).toUpperCase() : "U"}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: "800", fontSize: "0.9rem", color: "#fff" }}>{u.name}</div>
+                          <div style={{ fontSize: "0.75rem", color: "#10B981" }}>🟢 En línea</div>
+                        </div>
+                      </div>
+
+                      {isInRoom ? (
+                        <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#10B981" }}>En la sala</span>
+                      ) : isInvited ? (
+                        <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#F59E0B" }}>¡Invitación enviada! ✉️</span>
+                      ) : (
+                        <button
+                          onClick={() => handleSendInvite(u.id)}
+                          style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "0.4rem 0.85rem", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "800", cursor: "pointer" }}
+                        >
+                          Invitar
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowInviteModal(false)}
+              className="btn btn-outline"
+              style={{ width: "100%", marginTop: "1.25rem", padding: "0.75rem" }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

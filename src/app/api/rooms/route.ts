@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 
 function generateRoomCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "R-";
+  let code = "";
   for (let i = 0; i < 4; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -21,6 +21,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No autorizado" }, { status: 401 });
     }
 
+    let body: any = {};
+    try { body = await req.json(); } catch (e) {}
+    const { scope = "Mundo", totalQuestions = 10 } = body;
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, image: true }
@@ -30,29 +34,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 });
     }
 
-    // Generate unique code
+    // Generate unique 4-character code (e.g. 8K2X)
     let code = generateRoomCode();
     let existing = await prisma.room.findUnique({ where: { code } });
     let attempts = 0;
-    while (existing && attempts < 10) {
+    while (existing && attempts < 15) {
       code = generateRoomCode();
       existing = await prisma.room.findUnique({ where: { code } });
       attempts++;
     }
 
-    // Generate 10 random flag questions with 4 options each
+    // Fetch pool of countries according to scope
     const allCountries = await prisma.country.findMany({
       select: { id: true, name: true, nameEn: true, capital: true, capitalEn: true, isoCode: true, continent: true }
     });
 
-    const shuffledCountries = [...allCountries].sort(() => Math.random() - 0.5).slice(0, 10);
-
-    const questions = shuffledCountries.map(c => {
-      let pool = allCountries.filter(ac => ac.id !== c.id && ac.continent === c.continent);
-      if (pool.length < 3) {
-        pool = allCountries.filter(ac => ac.id !== c.id);
+    let pool = allCountries;
+    if (scope && scope !== "Mundo" && scope !== "world") {
+      const filtered = allCountries.filter(c => c.continent.toLowerCase().includes(scope.toLowerCase()));
+      if (filtered.length >= 4) {
+        pool = filtered;
       }
-      const distractors = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+    }
+
+    const qCount = Math.min(50, Math.max(5, Number(totalQuestions) || 10));
+
+    // Shuffle pool to generate questions
+    const shuffledTargets = [...pool].sort(() => Math.random() - 0.5);
+    const selectedTargets: typeof allCountries = [];
+
+    // Cycle if pool is smaller than qCount
+    for (let i = 0; i < qCount; i++) {
+      selectedTargets.push(shuffledTargets[i % shuffledTargets.length]);
+    }
+
+    const questions = selectedTargets.map(c => {
+      let distractorsPool = allCountries.filter(ac => ac.id !== c.id && ac.continent === c.continent);
+      if (distractorsPool.length < 3) {
+        distractorsPool = allCountries.filter(ac => ac.id !== c.id);
+      }
+      const distractors = [...distractorsPool].sort(() => Math.random() - 0.5).slice(0, 3);
       const options = [c, ...distractors].sort(() => Math.random() - 0.5);
 
       return {
@@ -68,7 +89,7 @@ export async function POST(req: Request) {
         id: "sys_1",
         senderId: "system",
         senderName: "Sistema",
-        text: `⚔️ ¡Sala ${code} creada! Invita a tus amigos usando este código. ¡Ponte en verde cuando estés listo!`,
+        text: `⚔️ ¡Sala ${code} creada (${scope} • ${qCount} preguntas)! Invita a tus amigos usando este código. ¡Ponte en verde cuando estés listo!`,
         emoji: "🔥",
         timestamp: Date.now()
       }
@@ -78,10 +99,11 @@ export async function POST(req: Request) {
       data: {
         code,
         hostId: userId,
+        scope,
         status: "WAITING",
         maxPlayers: 4,
         currentQuestionIndex: 0,
-        totalQuestions: 10,
+        totalQuestions: qCount,
         flagSequence: JSON.stringify(questions),
         messagesJson: JSON.stringify(initialMessages),
         players: {
@@ -89,7 +111,7 @@ export async function POST(req: Request) {
             userId,
             name: user.name || "Jugador Host",
             image: user.image,
-            isReady: true, // Host is ready by default
+            isReady: true,
             isHost: true,
             score: 0
           }
