@@ -23,6 +23,15 @@ const SUBREGIONS: Record<string, string[]> = {
   America_South: ["BRA","ARG","COL","PER","VEN","CHL","ECU","BOL","PRY","URY","GUY","SUR","GUF","FLK"]
 };
 
+function fisherYatesShuffle<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 export async function generateQuestionSequence(scope: string, totalQuestions: number) {
   const allCountries = await prisma.country.findMany({
     select: { id: true, name: true, nameEn: true, capital: true, capitalEn: true, isoCode: true, continent: true }
@@ -66,7 +75,7 @@ export async function generateQuestionSequence(scope: string, totalQuestions: nu
   }
 
   const qCount = Math.min(50, Math.max(5, Number(totalQuestions) || 10));
-  const shuffledTargets = [...pool].sort(() => Math.random() - 0.5);
+  const shuffledTargets = fisherYatesShuffle(pool);
   const selectedTargets: typeof allCountries = [];
 
   for (let i = 0; i < qCount; i++) {
@@ -78,8 +87,8 @@ export async function generateQuestionSequence(scope: string, totalQuestions: nu
     if (distractorsPool.length < 3) {
       distractorsPool = allCountries.filter(ac => ac.id !== c.id);
     }
-    const distractors = [...distractorsPool].sort(() => Math.random() - 0.5).slice(0, 3);
-    const options = [c, ...distractors].sort(() => Math.random() - 0.5);
+    const distractors = fisherYatesShuffle(distractorsPool).slice(0, 3);
+    const options = fisherYatesShuffle([c, ...distractors]);
 
     return {
       country: c,

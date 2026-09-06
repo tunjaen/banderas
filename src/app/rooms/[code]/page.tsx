@@ -124,6 +124,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const simultaneousTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasAutoJoined = useRef(false);
+  const isReadyTogglingRef = useRef(false);
 
   // Auto-join room when arriving via invitation link
   const autoJoinRoom = async () => {
@@ -150,7 +151,9 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         setMessages(data.messages || []);
         setCurrentUserId(data.currentUserId);
         setIsMeHost(data.isMeHost);
-        setIsMeReady(data.isMeReady);
+        if (!isReadyTogglingRef.current) {
+          setIsMeReady(data.isMeReady);
+        }
 
         // Reset selected option & timer when question advances
         if (data.room.currentQuestionIndex !== prevQuestionIndexRef.current) {
@@ -370,13 +373,24 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   };
 
   const handleToggleReady = async () => {
+    if (isReadyTogglingRef.current) return;
+    isReadyTogglingRef.current = true;
+    setIsMeReady((prev) => !prev);
+
     try {
       const res = await fetch(`/api/rooms/${code}/ready`, { method: "POST" });
       if (res.ok) {
-        fetchRoomState();
+        await fetchRoomState();
+      } else {
+        setIsMeReady((prev) => !prev);
       }
     } catch (e) {
       console.error("Error toggling ready state:", e);
+      setIsMeReady((prev) => !prev);
+    } finally {
+      setTimeout(() => {
+        isReadyTogglingRef.current = false;
+      }, 1200);
     }
   };
 
