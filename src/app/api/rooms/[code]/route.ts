@@ -47,6 +47,7 @@ export async function GET(
         id: room.id,
         code: room.code,
         hostId: room.hostId,
+        scope: room.scope,
         status: room.status,
         maxPlayers: room.maxPlayers,
         currentQuestionIndex: room.currentQuestionIndex,
@@ -66,3 +67,80 @@ export async function GET(
     return NextResponse.json({ message: "Error al obtener sala" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ code: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+
+    if (!userId) {
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
+
+    const { code } = await params;
+    const cleanCode = code.trim().toUpperCase();
+
+    const room = await prisma.room.findUnique({
+      where: { code: cleanCode },
+      include: { players: true }
+    });
+
+    if (!room) {
+      return NextResponse.json({ message: "Sala no encontrada" }, { status: 404 });
+    }
+
+    if (room.hostId !== userId) {
+      return NextResponse.json({ message: "Solo el anfitrión puede editar los ajustes de la sala" }, { status: 403 });
+    }
+
+    if (room.status !== "WAITING") {
+      return NextResponse.json({ message: "No se pueden editar los ajustes mientras se juega" }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { scope = room.scope, totalQuestions = room.totalQuestions } = body;
+
+    const qCount = Math.min(50, Math.max(5, Number(totalQuestions) || 10));
+
+    // Import or generate questions
+    const { generateQuestionSequence } = await import("@/app/api/rooms/[code]/reset/route");
+    const newQuestions = await generateQuestionSequence(scope, qCount);
+
+    let messages: any[] = [];
+    try { messages = JSON.parse(room.messagesJson); } catch (e) {}
+    messages.push({
+      id: `sys_${Date.now()}`,
+      senderId: "system",
+      senderName: "Sistema",
+      text: `⚙️ El anfitrión ha modificado la partida: ${scope} • ${qCount} preguntas.`,
+      emoji: "⚙️",
+      timestamp: Date.now()
+    });
+
+    // Reset ready status of all players because settings changed
+    await prisma.roomPlayer.updateMany({
+      where: { roomId: room.id },
+      data: { isReady: false }
+    });
+
+    const updatedRoom = await prisma.room.update({
+      where: { id: room.id },
+      data: {
+        scope,
+        totalQuestions: qCount,
+        flagSequence: JSON.stringify(newQuestions),
+        messagesJson: JSON.stringify(messages)
+      },
+      include: { players: true }
+    });
+
+    return NextResponse.json({ success: true, room: updatedRoom });
+  } catch (error) {
+    console.error("Error updating room settings:", error);
+    return NextResponse.json({ message: "Error al actualizar ajustes" }, { status: 500 });
+  }
+}
+

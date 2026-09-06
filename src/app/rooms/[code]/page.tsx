@@ -4,10 +4,62 @@ import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/lib/LanguageContext";
-import { FaCrown, FaCheckCircle, FaPaperPlane, FaTrophy, FaArrowRight, FaCopy, FaCheck, FaTimes, FaGlobe } from "react-icons/fa";
+import { FaCrown, FaCheckCircle, FaPaperPlane, FaTrophy, FaArrowRight, FaCopy, FaCheck, FaTimes, FaGlobe, FaCog, FaUndo } from "react-icons/fa";
 import SwordsIcon from "@/components/SwordsIcon";
 
 const EMOJI_STICKERS = ["🔥", "👑", "⚔️", "🥳", "🎯", "💣", "🤪", "🍿", "🚀", "💡", "💩", "💙", "👏", "😎", "🏆", "😱"];
+
+const ROOM_TERRITORY_GROUPS = [
+  {
+    title: "🌐 Global",
+    items: [
+      { id: "Mundo", label: "Todo el Mundo (244 Países)", isContinent: true }
+    ]
+  },
+  {
+    title: "🌍 África",
+    items: [
+      { id: "África", label: "Toda África (54 Países)", isContinent: true },
+      { id: "Africa_NorthWest", label: "África Septentrional y Occidental" },
+      { id: "Africa_East", label: "África Oriental" },
+      { id: "Africa_CentralSouth", label: "África Central y Austral" }
+    ]
+  },
+  {
+    title: "🇪🇺 Europa",
+    items: [
+      { id: "Europa", label: "Toda Europa (49 Países)", isContinent: true },
+      { id: "Europe_WestNorth", label: "Europa Occidental y del Norte" },
+      { id: "Europe_South", label: "Europa del Sur y Mediterráneo" },
+      { id: "Europe_East", label: "Europa Oriental y Central" }
+    ]
+  },
+  {
+    title: "🌏 Asia",
+    items: [
+      { id: "Asia", label: "Toda Asia (48 Países)", isContinent: true },
+      { id: "Asia_EastSE", label: "Asia Oriental y Sudeste Asiático" },
+      { id: "Asia_SouthCentral", label: "Asia del Sur y Central" },
+      { id: "Asia_MiddleEast", label: "Oriente Medio y Cercano Oriente" }
+    ]
+  },
+  {
+    title: "🌎 América",
+    items: [
+      { id: "América", label: "Toda América (35 Países)", isContinent: true },
+      { id: "America_NorthCentral", label: "América del Norte y Central" },
+      { id: "America_Caribbean", label: "Caribe y Antillas" },
+      { id: "America_South", label: "América del Sur" }
+    ]
+  },
+  {
+    title: "🏝️ Oceanía e Islas",
+    items: [
+      { id: "Oceanía", label: "Toda Oceanía (14 Países)", isContinent: true },
+      { id: "Islas", label: "Cazatesoros de Islas (77 Países)" }
+    ]
+  }
+];
 
 interface Player {
   id: string;
@@ -52,16 +104,25 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const [pointBanner, setPointBanner] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(10);
   const [isTimedOut, setIsTimedOut] = useState(false);
+  const [simultaneousTimeLeft, setSimultaneousTimeLeft] = useState<number | null>(null);
 
-  // Invite modal state
+  // Modals state
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [onlinePlayers, setOnlinePlayers] = useState<any[]>([]);
   const [loadingOnline, setLoadingOnline] = useState(false);
   const [invitedUserIds, setInvitedUserIds] = useState<Record<string, boolean>>({});
 
+  // Host Edit Settings state
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [editScopes, setEditScopes] = useState<string[]>([]);
+  const [editQuestionCount, setEditQuestionCount] = useState<number>(10);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [resettingRoom, setResettingRoom] = useState(false);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevQuestionIndexRef = useRef<number>(-1);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const simultaneousTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasAutoJoined = useRef(false);
 
   // Auto-join room when arriving via invitation link
@@ -98,12 +159,16 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           setIsAnswering(false);
           setIsTimedOut(false);
           setTimeLeft(10);
+          setSimultaneousTimeLeft(null);
         }
 
-        // Check if current question was just claimed by a player
+        // Check if current question was claimed
         if (data.currentQuestion?.claimedBy && data.currentQuestion.claimedBy.name) {
           const winnerName = data.currentQuestion.claimedBy.name;
-          setPointBanner(`⚡ ¡${winnerName} fue el más rápido y acertó la bandera (+1 punto)!`);
+          const isWinnerMe = data.currentQuestion.claimedBy.userId === data.currentUserId;
+          if (!isWinnerMe) {
+            setPointBanner(`⚡ ¡${winnerName} acertó la bandera primero! Responde antes de que expire el tiempo para acierto simultáneo.`);
+          }
         }
       } else if (res.status === 404) {
         router.push("/rooms");
@@ -116,7 +181,6 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   };
 
   useEffect(() => {
-    // Auto-join first, then start polling
     autoJoinRoom().then(() => fetchRoomState());
     const interval = setInterval(fetchRoomState, 1000);
     return () => clearInterval(interval);
@@ -126,7 +190,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  // 10-Second Timer Effect per question during PLAYING state
+  // 10-Second Main Timer Effect
   useEffect(() => {
     if (!room || room.status !== "PLAYING" || selectedOptionId !== null || isTimedOut) {
       return;
@@ -147,6 +211,40 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [room?.status, room?.currentQuestionIndex, selectedOptionId, isTimedOut]);
+
+  // 2.5-Second Simultaneous Answer Countdown Effect
+  useEffect(() => {
+    if (
+      !currentQuestion?.claimedBy ||
+      selectedOptionId !== null ||
+      isTimedOut ||
+      currentQuestion.claimedBy.userId === currentUserId
+    ) {
+      setSimultaneousTimeLeft(null);
+      if (simultaneousTimerRef.current) clearInterval(simultaneousTimerRef.current);
+      return;
+    }
+
+    const claimedAt = currentQuestion.claimedBy.claimedAt || Date.now();
+    const updateSimTimer = () => {
+      const elapsed = Date.now() - claimedAt;
+      const remainingMs = Math.max(0, 2500 - elapsed);
+      const remainingSec = Math.round((remainingMs / 1000) * 10) / 10;
+      setSimultaneousTimeLeft(remainingSec);
+
+      if (remainingMs <= 0) {
+        if (simultaneousTimerRef.current) clearInterval(simultaneousTimerRef.current);
+        handleTimeout();
+      }
+    };
+
+    updateSimTimer();
+    simultaneousTimerRef.current = setInterval(updateSimTimer, 100);
+
+    return () => {
+      if (simultaneousTimerRef.current) clearInterval(simultaneousTimerRef.current);
+    };
+  }, [currentQuestion?.claimedBy, selectedOptionId, isTimedOut, currentUserId]);
 
   const handleTimeout = async () => {
     if (isTimedOut || selectedOptionId !== null) return;
@@ -196,6 +294,72 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       }
     } catch (e) {
       console.error("Error sending room invite:", e);
+    }
+  };
+
+  const openSettingsModal = () => {
+    const currentScope = room?.scope || "Mundo";
+    setEditScopes(currentScope.split(",").map((s: string) => s.trim()).filter(Boolean));
+    setEditQuestionCount(room?.totalQuestions || 10);
+    setShowSettingsModal(true);
+  };
+
+  const toggleEditScope = (scopeId: string) => {
+    if (editScopes.includes(scopeId)) {
+      if (editScopes.length === 1) return; // keep at least 1
+      setEditScopes(editScopes.filter(s => s !== scopeId));
+    } else {
+      if (scopeId === "Mundo") {
+        setEditScopes(["Mundo"]);
+      } else {
+        const withoutWorld = editScopes.filter(s => s !== "Mundo");
+        setEditScopes([...withoutWorld, scopeId]);
+      }
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (editScopes.length === 0) return;
+    setSavingSettings(true);
+    try {
+      const res = await fetch(`/api/rooms/${code}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scope: editScopes.join(","),
+          totalQuestions: editQuestionCount
+        })
+      });
+      if (res.ok) {
+        setShowSettingsModal(false);
+        fetchRoomState();
+      } else {
+        const d = await res.json();
+        alert(d.message || "Error al actualizar ajustes");
+      }
+    } catch (e) {
+      console.error("Error saving settings:", e);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleResetRoom = async () => {
+    setResettingRoom(true);
+    try {
+      const res = await fetch(`/api/rooms/${code}/reset`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        fetchRoomState();
+      } else {
+        const d = await res.json();
+        alert(d.message || "Error al reiniciar la sala");
+      }
+    } catch (e) {
+      console.error("Error resetting room:", e);
+    } finally {
+      setResettingRoom(false);
     }
   };
 
@@ -270,7 +434,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       } else if (data.isCorrect && data.isSimultaneous) {
         setPointBanner(`✨ ¡Acierto simultáneo! (+1 punto)`);
       } else if (!data.isCorrect) {
-        setPointBanner(`💥 ¡Error! +1 punto otorgado a todos tus oponentes.`);
+        setPointBanner(`💥 ¡Error! +1 punto otorgado a tus oponentes.`);
       }
 
       fetchRoomState();
@@ -309,26 +473,26 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--color-bg)" }}>
       <Navbar />
 
-      <main className="container animate-fade-in" style={{ maxWidth: "1000px", padding: "1.25rem 1rem", flex: 1, display: "flex", flexDirection: "column" }}>
+      <main className="container animate-fade-in" style={{ maxWidth: "1000px", padding: "1rem", flex: 1, display: "flex", flexDirection: "column" }}>
         
         {/* Top Room Header Bar */}
-        <div style={{ background: "rgba(13, 20, 16, 0.9)", border: "1px solid rgba(255,255,255,0.08)", padding: "0.85rem 1.25rem", borderRadius: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.25rem" }}>
+        <div style={{ background: "rgba(13, 20, 16, 0.9)", border: "1px solid rgba(255,255,255,0.08)", padding: "0.75rem 1rem", borderRadius: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.6rem", marginBottom: "1rem" }}>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: "800", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: "800", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
               <span>👑 Sala Multijugador</span>
               <span>•</span>
               <span style={{ color: "#fff" }}>📍 {room.scope || "Mundo"}</span>
               <span>•</span>
               <span style={{ color: "#fff" }}>🎯 {room.totalQuestions} Preguntas</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginTop: "0.15rem" }}>
-              <span style={{ fontSize: "1.4rem", fontWeight: "900", color: "#fff", letterSpacing: "1px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.15rem" }}>
+              <span style={{ fontSize: "1.25rem", fontWeight: "900", color: "#fff", letterSpacing: "1px" }}>
                 Código: <span style={{ color: "var(--color-primary)" }}>{room.code}</span>
               </span>
               <button
                 onClick={handleCopyCode}
                 title="Copiar código de sala"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", padding: "0.3rem 0.6rem", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.3rem", cursor: "pointer" }}
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", padding: "0.25rem 0.5rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.3rem", cursor: "pointer" }}
               >
                 {copiedCode ? <FaCheck color="#10B981" /> : <FaCopy />}
                 <span>{copiedCode ? "¡Copiado!" : "Copiar"}</span>
@@ -336,23 +500,32 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            {isWaiting && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+            {isWaiting && isMeHost && (
               <button
-                onClick={openInviteModal}
-                style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", color: "#fff", border: "none", padding: "0.4rem 0.85rem", borderRadius: "20px", fontSize: "0.85rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", boxShadow: "0 0 15px rgba(59, 130, 246, 0.4)" }}
+                onClick={openSettingsModal}
+                style={{ background: "rgba(245, 158, 11, 0.15)", color: "#F59E0B", border: "1px solid rgba(245, 158, 11, 0.4)", padding: "0.4rem 0.75rem", borderRadius: "20px", fontSize: "0.8rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "0.35rem", cursor: "pointer" }}
               >
-                <span>📩 Invitar Jugadores</span>
+                <FaCog /> <span>Editar Ajustes</span>
               </button>
             )}
 
-            <span style={{ fontSize: "0.9rem", fontWeight: "800", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "0.4rem 0.85rem", borderRadius: "20px", color: "#fff" }}>
-              👥 {players.length}/4 Jugadores
+            {isWaiting && (
+              <button
+                onClick={openInviteModal}
+                style={{ background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", color: "#fff", border: "none", padding: "0.4rem 0.75rem", borderRadius: "20px", fontSize: "0.8rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "0.35rem", cursor: "pointer", boxShadow: "0 0 12px rgba(59, 130, 246, 0.4)" }}
+              >
+                <span>📩 Invitar</span>
+              </button>
+            )}
+
+            <span style={{ fontSize: "0.8rem", fontWeight: "800", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "0.4rem 0.75rem", borderRadius: "20px", color: "#fff" }}>
+              👥 {players.length}/4
             </span>
             <button
               onClick={() => router.push("/rooms")}
               className="btn btn-outline"
-              style={{ padding: "0.4rem 0.85rem", fontSize: "0.85rem" }}
+              style={{ padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
             >
               Salir
             </button>
@@ -361,45 +534,45 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
         {/* Floating Point Notification Banner */}
         {pointBanner && isPlaying && (
-          <div className="animate-scale-up" style={{ position: "fixed", top: "80px", left: "50%", transform: "translateX(-50%)", zIndex: 9999, padding: "0.85rem 1.5rem", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(59, 130, 246, 0.95))", border: "2px solid #10B981", color: "#FFF", borderRadius: "30px", fontWeight: "900", fontSize: "1.05rem", boxShadow: "0 10px 35px rgba(16, 185, 129, 0.5)", backdropFilter: "blur(10px)", pointerEvents: "none", maxWidth: "90vw", textAlign: "center" }}>
+          <div className="animate-scale-up" style={{ position: "fixed", top: "75px", left: "50%", transform: "translateX(-50%)", zIndex: 9999, padding: "0.75rem 1.25rem", background: "linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(59, 130, 246, 0.95))", border: "2px solid #10B981", color: "#FFF", borderRadius: "30px", fontWeight: "900", fontSize: "0.95rem", boxShadow: "0 10px 35px rgba(16, 185, 129, 0.5)", backdropFilter: "blur(10px)", pointerEvents: "none", maxWidth: "92vw", textAlign: "center" }}>
             {pointBanner}
           </div>
         )}
 
         {/* MAIN BODY: LOBBY vs GAME vs FINISHED */}
         {isWaiting && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.25rem", flex: 1 }}>
+          <div className="lobby-container" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1rem", flex: 1 }}>
             
             {/* Left Column: Player Cards & Ready Action */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               
               {/* Ready / Start Control Card */}
-              <div className="card" style={{ padding: "1.5rem", background: "rgba(13, 20, 16, 0.85)", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: "16px", textAlign: "center" }}>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: "800", color: "#fff", marginBottom: "0.5rem" }}>
+              <div className="card" style={{ padding: "1.25rem", background: "rgba(13, 20, 16, 0.85)", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: "16px", textAlign: "center" }}>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: "800", color: "#fff", marginBottom: "0.4rem" }}>
                   Estado de la Sala: <span style={{ color: "var(--color-primary)" }}>En Espera</span>
                 </h3>
-                <p style={{ fontSize: "0.9rem", color: "var(--color-text-muted)", marginBottom: "1.25rem" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
                   Para iniciar la partida, todos los jugadores unidos deben pulsar el botón de preparación y ponerse en **verde (¡LISTO!)**.
                 </p>
 
-                <div style={{ display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
                   {/* Ready Toggle Button */}
                   <button
                     onClick={handleToggleReady}
                     style={{
-                      padding: "1rem 2rem",
-                      borderRadius: "14px",
-                      fontSize: "1.1rem",
+                      padding: "0.85rem 1.5rem",
+                      borderRadius: "12px",
+                      fontSize: "1rem",
                       fontWeight: "900",
                       background: isMeReady ? "linear-gradient(135deg, #10B981, #059669)" : "rgba(245, 158, 11, 0.15)",
                       color: isMeReady ? "#fff" : "#F59E0B",
                       border: `2px solid ${isMeReady ? "#10B981" : "#F59E0B"}`,
-                      boxShadow: isMeReady ? "0 0 25px rgba(16, 185, 129, 0.5)" : "none",
+                      boxShadow: isMeReady ? "0 0 20px rgba(16, 185, 129, 0.5)" : "none",
                       cursor: "pointer",
                       transition: "all 0.2s ease-in-out",
                       display: "flex",
                       alignItems: "center",
-                      gap: "0.5rem"
+                      gap: "0.4rem"
                     }}
                   >
                     <span>{isMeReady ? "💚 ¡ESTOY LISTO!" : "🟡 PONERME LISTO"}</span>
@@ -412,13 +585,13 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                       disabled={!canHostStart}
                       className="btn btn-primary"
                       style={{
-                        padding: "1rem 2rem",
-                        borderRadius: "14px",
-                        fontSize: "1.1rem",
+                        padding: "0.85rem 1.5rem",
+                        borderRadius: "12px",
+                        fontSize: "1rem",
                         fontWeight: "900",
                         opacity: canHostStart ? 1 : 0.4,
                         cursor: canHostStart ? "pointer" : "not-allowed",
-                        boxShadow: canHostStart ? "0 0 25px rgba(167, 244, 50, 0.5)" : "none"
+                        boxShadow: canHostStart ? "0 0 20px rgba(167, 244, 50, 0.5)" : "none"
                       }}
                     >
                       <span>🚀 ¡EMPEZAR BATALLA!</span>
@@ -427,7 +600,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                 </div>
 
                 {isMeHost && !canHostStart && (
-                  <p style={{ fontSize: "0.8rem", color: "#F59E0B", fontWeight: "700", marginTop: "0.85rem" }}>
+                  <p style={{ fontSize: "0.785rem", color: "#F59E0B", fontWeight: "700", marginTop: "0.75rem" }}>
                     {players.length < 2
                       ? "⚠️ Esperando que se una al menos 1 jugador más..."
                       : "⚠️ Esperando que todos los jugadores se pongan en verde (¡LISTO!) para iniciar."}
@@ -436,7 +609,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               </div>
 
               {/* 2-4 Player Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "0.75rem" }}>
                 {Array.from({ length: 4 }).map((_, idx) => {
                   const p = players[idx];
 
@@ -448,22 +621,22 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                           background: "rgba(255,255,255,0.02)",
                           border: "2px dashed rgba(255,255,255,0.08)",
                           borderRadius: "16px",
-                          padding: "1.5rem 1rem",
+                          padding: "1.25rem 0.75rem",
                           textAlign: "center",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
-                          minHeight: "150px"
+                          minHeight: "130px"
                         }}
                       >
-                        <div style={{ fontSize: "2rem", opacity: 0.3, marginBottom: "0.4rem" }}>👤</div>
-                        <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", fontWeight: "600" }}>
+                        <div style={{ fontSize: "1.6rem", opacity: 0.3, marginBottom: "0.3rem" }}>👤</div>
+                        <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", fontWeight: "600" }}>
                           Slot Libre #{idx + 1}
                         </span>
                         <button
                           onClick={openInviteModal}
-                          style={{ marginTop: "0.5rem", background: "rgba(59, 130, 246, 0.2)", border: "1px solid rgba(59, 130, 246, 0.4)", color: "#60A5FA", padding: "0.25rem 0.6rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer" }}
+                          style={{ marginTop: "0.4rem", background: "rgba(59, 130, 246, 0.2)", border: "1px solid rgba(59, 130, 246, 0.4)", color: "#60A5FA", padding: "0.2rem 0.5rem", borderRadius: "8px", fontSize: "0.725rem", fontWeight: "700", cursor: "pointer" }}
                         >
                           + Invitar
                         </button>
@@ -478,15 +651,15 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                         background: p.isReady ? "rgba(16, 185, 129, 0.1)" : "rgba(255,255,255,0.03)",
                         border: `2px solid ${p.isReady ? "#10B981" : "rgba(255,255,255,0.08)"}`,
                         borderRadius: "16px",
-                        padding: "1.25rem 1rem",
+                        padding: "1rem 0.75rem",
                         textAlign: "center",
                         position: "relative",
-                        boxShadow: p.isReady ? "0 0 20px rgba(16, 185, 129, 0.2)" : "none",
+                        boxShadow: p.isReady ? "0 0 15px rgba(16, 185, 129, 0.2)" : "none",
                         transition: "all 0.3s ease"
                       }}
                     >
                       {p.isHost && (
-                        <span style={{ position: "absolute", top: "10px", right: "10px", color: "#F59E0B", fontSize: "1.1rem" }} title="Anfitrión de la sala">
+                        <span style={{ position: "absolute", top: "8px", right: "8px", color: "#F59E0B", fontSize: "1rem" }} title="Anfitrión de la sala">
                           <FaCrown />
                         </span>
                       )}
@@ -494,35 +667,35 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                       {/* Avatar */}
                       <div
                         style={{
-                          width: "56px",
-                          height: "56px",
+                          width: "48px",
+                          height: "48px",
                           borderRadius: "50%",
                           background: p.isReady ? "linear-gradient(135deg, #10B981, #059669)" : "linear-gradient(135deg, #3B82F6, #1D4ED8)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          margin: "0 auto 0.75rem auto",
+                          margin: "0 auto 0.5rem auto",
                           fontWeight: "900",
-                          fontSize: "1.4rem",
+                          fontSize: "1.25rem",
                           color: "#fff",
-                          boxShadow: p.isReady ? "0 0 15px #10B981" : "none"
+                          boxShadow: p.isReady ? "0 0 12px #10B981" : "none"
                         }}
                       >
                         {p.name ? p.name.charAt(0).toUpperCase() : "P"}
                       </div>
 
-                      <div style={{ fontWeight: "800", fontSize: "1rem", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div style={{ fontWeight: "800", fontSize: "0.9rem", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {p.name} {p.userId === currentUserId ? "(Tú)" : ""}
                       </div>
 
-                      {/* Ready Badge (NEON GREEN) */}
-                      <div style={{ marginTop: "0.6rem" }}>
+                      {/* Ready Badge */}
+                      <div style={{ marginTop: "0.5rem" }}>
                         {p.isReady ? (
-                          <span style={{ background: "#10B981", color: "#000", fontWeight: "900", fontSize: "0.75rem", padding: "0.25rem 0.75rem", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "0.3rem", boxShadow: "0 0 10px #10B981" }}>
+                          <span style={{ background: "#10B981", color: "#000", fontWeight: "900", fontSize: "0.7rem", padding: "0.2rem 0.6rem", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "0.25rem", boxShadow: "0 0 8px #10B981" }}>
                             <FaCheckCircle /> ¡LISTO!
                           </span>
                         ) : (
-                          <span style={{ background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", fontWeight: "800", fontSize: "0.75rem", padding: "0.25rem 0.75rem", borderRadius: "12px", border: "1px solid rgba(245, 158, 11, 0.4)" }}>
+                          <span style={{ background: "rgba(245, 158, 11, 0.2)", color: "#F59E0B", fontWeight: "800", fontSize: "0.7rem", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid rgba(245, 158, 11, 0.4)" }}>
                             🟡 En Espera
                           </span>
                         )}
@@ -534,22 +707,22 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
             </div>
 
-            {/* Right Column: Lobby Chat with Emojis */}
-            <div style={{ background: "rgba(13, 20, 16, 0.9)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", display: "flex", flexDirection: "column", height: "520px", overflow: "hidden" }}>
+            {/* Right Column: Lobby Chat */}
+            <div className="chat-container" style={{ background: "rgba(13, 20, 16, 0.9)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", display: "flex", flexDirection: "column", height: "480px", overflow: "hidden" }}>
               
-              <div style={{ padding: "0.85rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.2)", fontWeight: "800", fontSize: "0.95rem", color: "#fff", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.2)", fontWeight: "800", fontSize: "0.9rem", color: "#fff", display: "flex", alignItems: "center", gap: "0.4rem" }}>
                 <span>💬 Chat de Sala</span>
               </div>
 
               {/* Chat Messages */}
-              <div style={{ flex: 1, padding: "0.85rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <div style={{ flex: 1, padding: "0.75rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {messages.map((m) => {
                   const isSys = m.senderId === "system";
                   const isMe = m.senderId === currentUserId;
 
                   if (isSys) {
                     return (
-                      <div key={m.id} style={{ textAlign: "center", fontSize: "0.785rem", color: "var(--color-primary)", background: "rgba(167, 244, 50, 0.08)", padding: "0.4rem 0.75rem", borderRadius: "10px", border: "1px solid rgba(167, 244, 50, 0.15)" }}>
+                      <div key={m.id} style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--color-primary)", background: "rgba(167, 244, 50, 0.08)", padding: "0.35rem 0.6rem", borderRadius: "10px", border: "1px solid rgba(167, 244, 50, 0.15)" }}>
                         {m.emoji && <span style={{ marginRight: "0.3rem" }}>{m.emoji}</span>}
                         {m.text}
                       </div>
@@ -565,14 +738,14 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                         background: isMe ? "rgba(16, 185, 129, 0.2)" : "rgba(255,255,255,0.06)",
                         border: `1px solid ${isMe ? "rgba(16, 185, 129, 0.4)" : "rgba(255,255,255,0.1)"}`,
                         borderRadius: "12px",
-                        padding: "0.5rem 0.75rem"
+                        padding: "0.45rem 0.65rem"
                       }}
                     >
-                      <div style={{ fontSize: "0.7rem", fontWeight: "800", color: isMe ? "#10B981" : "#60A5FA", marginBottom: "0.15rem" }}>
+                      <div style={{ fontSize: "0.68rem", fontWeight: "800", color: isMe ? "#10B981" : "#60A5FA", marginBottom: "0.1rem" }}>
                         {m.senderName}
                       </div>
-                      <div style={{ fontSize: "0.9rem", color: "#fff", wordBreak: "break-word" }}>
-                        {m.emoji && <span style={{ fontSize: "1.2rem", marginRight: "0.3rem" }}>{m.emoji}</span>}
+                      <div style={{ fontSize: "0.85rem", color: "#fff", wordBreak: "break-word" }}>
+                        {m.emoji && <span style={{ fontSize: "1.1rem", marginRight: "0.3rem" }}>{m.emoji}</span>}
                         {m.text}
                       </div>
                     </div>
@@ -581,13 +754,13 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Emoji Sticker Picker Bar */}
-              <div style={{ padding: "0.4rem 0.6rem", background: "rgba(0,0,0,0.3)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: "0.35rem", overflowX: "auto" }}>
+              {/* Emoji Sticker Bar */}
+              <div style={{ padding: "0.35rem 0.5rem", background: "rgba(0,0,0,0.3)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: "0.3rem", overflowX: "auto" }}>
                 {EMOJI_STICKERS.map((st) => (
                   <button
                     key={st}
                     onClick={() => handleSendChat(st)}
-                    style={{ fontSize: "1.1rem", padding: "0.2rem 0.35rem", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer" }}
+                    style={{ fontSize: "1rem", padding: "0.15rem 0.3rem", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "none", cursor: "pointer" }}
                   >
                     {st}
                   </button>
@@ -595,18 +768,18 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               </div>
 
               {/* Chat Input */}
-              <form onSubmit={(e) => { e.preventDefault(); handleSendChat(); }} style={{ padding: "0.6rem", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: "0.4rem" }}>
+              <form onSubmit={(e) => { e.preventDefault(); handleSendChat(); }} style={{ padding: "0.5rem", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: "0.35rem" }}>
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Escribe un mensaje..."
-                  style={{ flex: 1, padding: "0.5rem 0.75rem", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#fff", fontSize: "0.85rem" }}
+                  style={{ flex: 1, padding: "0.45rem 0.65rem", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#fff", fontSize: "0.8rem" }}
                 />
                 <button
                   type="submit"
                   disabled={!chatInput.trim()}
-                  style={{ padding: "0.5rem 0.85rem", background: "var(--color-primary)", color: "#000", border: "none", borderRadius: "8px", fontWeight: "800", cursor: chatInput.trim() ? "pointer" : "default" }}
+                  style={{ padding: "0.45rem 0.75rem", background: "var(--color-primary)", color: "#000", border: "none", borderRadius: "8px", fontWeight: "800", cursor: chatInput.trim() ? "pointer" : "default" }}
                 >
                   <FaPaperPlane />
                 </button>
@@ -619,11 +792,11 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
         {/* LIVE GAME MODE (status == "PLAYING") */}
         {isPlaying && currentQuestion && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", flex: 1 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem", flex: 1 }}>
             
             {/* Live Scoreboard & Timer Bar */}
-            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-              <div style={{ flex: 1, display: "grid", gridTemplateColumns: `repeat(${players.length}, 1fr)`, gap: "0.75rem" }}>
+            <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ flex: 1, display: "grid", gridTemplateColumns: `repeat(${players.length}, 1fr)`, gap: "0.5rem" }}>
                 {players.map((p) => (
                   <div
                     key={p.id}
@@ -631,21 +804,21 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                       background: "rgba(13, 20, 16, 0.9)",
                       border: `2px solid ${p.userId === currentUserId ? "var(--color-primary)" : "rgba(255,255,255,0.1)"}`,
                       borderRadius: "12px",
-                      padding: "0.6rem 0.85rem",
+                      padding: "0.5rem 0.65rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between"
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#10B981", color: "#000", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#10B981", color: "#000", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem" }}>
                         {p.name.charAt(0).toUpperCase()}
                       </div>
-                      <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#fff", maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <span style={{ fontSize: "0.8rem", fontWeight: "800", color: "#fff", maxWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {p.name}
                       </span>
                     </div>
-                    <span style={{ fontSize: "1.1rem", fontWeight: "900", color: "var(--color-primary)" }}>
+                    <span style={{ fontSize: "1rem", fontWeight: "900", color: "var(--color-primary)" }}>
                       {p.score} pts
                     </span>
                   </div>
@@ -653,23 +826,30 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               </div>
 
               {/* 10s Countdown Bar */}
-              <div style={{ background: "rgba(13, 20, 16, 0.9)", border: `2px solid ${timeLeft <= 3 ? "#EF4444" : "rgba(255,255,255,0.15)"}`, borderRadius: "12px", padding: "0.6rem 1rem", minWidth: "90px", textAlign: "center" }}>
-                <div style={{ fontSize: "0.65rem", textTransform: "uppercase", color: "var(--color-text-muted)", fontWeight: "800" }}>Tiempo</div>
-                <div style={{ fontSize: "1.2rem", fontWeight: "900", color: timeLeft <= 3 ? "#EF4444" : "var(--color-primary)" }}>
+              <div style={{ background: "rgba(13, 20, 16, 0.9)", border: `2px solid ${timeLeft <= 3 ? "#EF4444" : "rgba(255,255,255,0.15)"}`, borderRadius: "12px", padding: "0.5rem 0.85rem", minWidth: "80px", textAlign: "center" }}>
+                <div style={{ fontSize: "0.6rem", textTransform: "uppercase", color: "var(--color-text-muted)", fontWeight: "800" }}>Tiempo</div>
+                <div style={{ fontSize: "1.1rem", fontWeight: "900", color: timeLeft <= 3 ? "#EF4444" : "var(--color-primary)" }}>
                   ⏱️ {timeLeft}s
                 </div>
               </div>
             </div>
 
+            {/* 2.5-Second Simultaneous Countdown Timer Banner */}
+            {simultaneousTimeLeft !== null && simultaneousTimeLeft > 0 && selectedOptionId === null && !isTimedOut && (
+              <div className="animate-pulse" style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#000", border: "2px solid #FBBF24", borderRadius: "14px", padding: "0.6rem 1rem", textAlign: "center", fontWeight: "900", fontSize: "0.95rem", boxShadow: "0 0 20px rgba(245, 158, 11, 0.6)" }}>
+                ⚡ ¡{currentQuestion?.claimedBy?.name || "Un jugador"} acertó primero! Tienes <span style={{ fontSize: "1.2rem", textDecoration: "underline" }}>{simultaneousTimeLeft.toFixed(1)}s</span> para acertar también y llevarte el punto.
+              </div>
+            )}
+
             {/* Question Card */}
-            <div className="card" style={{ padding: "2rem 1.5rem", textAlign: "center", background: "rgba(13, 20, 16, 0.9)", border: "1px solid rgba(167, 244, 50, 0.3)", borderRadius: "20px" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--color-primary)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+            <div className="card" style={{ padding: "1.5rem 1rem", textAlign: "center", background: "rgba(13, 20, 16, 0.9)", border: "1px solid rgba(167, 244, 50, 0.3)", borderRadius: "20px" }}>
+              <div style={{ fontSize: "0.8rem", fontWeight: "800", color: "var(--color-primary)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
                 ⚡ Pregunta {room.currentQuestionIndex + 1} de {room.totalQuestions} • ¡El primero en acertar gana el punto!
               </div>
 
               {isTimedOut && (
-                <div style={{ color: "#EF4444", fontWeight: "800", fontSize: "0.9rem", marginBottom: "0.75rem", background: "rgba(239, 68, 68, 0.1)", padding: "0.4rem", borderRadius: "8px" }}>
-                  ⏰ ¡Tiempo agotado! Tu respuesta fue bloqueada para esta pregunta.
+                <div style={{ color: "#EF4444", fontWeight: "800", fontSize: "0.85rem", marginBottom: "0.6rem", background: "rgba(239, 68, 68, 0.1)", padding: "0.35rem", borderRadius: "8px" }}>
+                  ⏰ ¡Tiempo agotado! Tu respuesta fue inhabilitada.
                 </div>
               )}
 
@@ -677,53 +857,46 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                 <img
                   src={`https://flagcdn.com/w640/${currentQuestion.country.isoCode.toLowerCase()}.png`}
                   alt="Flag"
-                  style={{ maxHeight: "200px", maxWidth: "100%", borderRadius: "10px", boxShadow: "0 8px 30px rgba(0,0,0,0.6)", margin: "0 auto 1.5rem auto" }}
+                  style={{ maxHeight: "170px", maxWidth: "100%", borderRadius: "10px", boxShadow: "0 8px 30px rgba(0,0,0,0.6)", margin: "0 auto 1.25rem auto" }}
                 />
               )}
 
-              {/* 4 Option Buttons */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", maxWidth: "600px", margin: "0 auto" }}>
+              {/* 4 Option Buttons Grid */}
+              <div className="options-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", maxWidth: "550px", margin: "0 auto" }}>
                 {currentQuestion.options.map((opt: any) => {
                   const isSelected = selectedOptionId === opt.id;
-                  const isClaimedByMe = currentQuestion.claimedBy?.userId === currentUserId;
                   const isTarget = opt.id === currentQuestion.country.id;
 
                   let bg = "rgba(255,255,255,0.04)";
                   let border = "rgba(255,255,255,0.1)";
 
-                  if (currentQuestion.claimedBy) {
+                  if (isSelected) {
                     if (isTarget) {
-                      bg = "rgba(16, 185, 129, 0.25)";
-                      border = "#10B981";
-                    }
-                    if (isSelected && !isTarget) {
-                      bg = "rgba(239, 68, 68, 0.2)";
-                      border = "#EF4444";
-                    }
-                  } else if (isSelected) {
-                    if (isTarget) {
-                      bg = "rgba(16, 185, 129, 0.25)";
+                      bg = "rgba(16, 185, 129, 0.3)";
                       border = "#10B981";
                     } else {
-                      bg = "rgba(239, 68, 68, 0.2)";
+                      bg = "rgba(239, 68, 68, 0.3)";
                       border = "#EF4444";
                     }
+                  } else if (currentQuestion.claimedBy && isTarget) {
+                    bg = "rgba(16, 185, 129, 0.2)";
+                    border = "#10B981";
                   }
 
                   return (
                     <button
                       key={opt.id}
                       onClick={() => handleSelectOption(opt.id)}
-                      disabled={selectedOptionId !== null || !!currentQuestion.claimedBy || isAnswering || isTimedOut}
+                      disabled={selectedOptionId !== null || isAnswering || isTimedOut}
                       style={{
-                        padding: "1.1rem 1rem",
+                        padding: "1rem 0.75rem",
                         borderRadius: "12px",
                         background: bg,
                         border: `2px solid ${border}`,
                         color: "#fff",
                         fontWeight: "800",
-                        fontSize: "1rem",
-                        cursor: (selectedOptionId !== null || currentQuestion.claimedBy || isTimedOut) ? "default" : "pointer",
+                        fontSize: "0.95rem",
+                        cursor: (selectedOptionId !== null || isTimedOut) ? "default" : "pointer",
                         opacity: isTimedOut ? 0.4 : 1,
                         transition: "all 0.2s ease-in-out"
                       }}
@@ -740,16 +913,16 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
         {/* FINISHED PODIUM MODE (status == "FINISHED") */}
         {isFinished && (
-          <div className="card animate-fade-in" style={{ padding: "2.5rem 1.5rem", textAlign: "center", background: "rgba(13, 20, 16, 0.95)", borderRadius: "20px", border: "2px solid #F59E0B", boxShadow: "0 0 50px rgba(245, 158, 11, 0.3)", maxWidth: "650px", margin: "0 auto", width: "100%" }}>
-            <div style={{ fontSize: "4rem", marginBottom: "0.5rem" }}>🏆</div>
-            <h2 style={{ fontSize: "2rem", fontWeight: "900", color: "#fff", marginBottom: "0.5rem" }}>
+          <div className="card animate-fade-in" style={{ padding: "2rem 1.25rem", textAlign: "center", background: "rgba(13, 20, 16, 0.95)", borderRadius: "20px", border: "2px solid #F59E0B", boxShadow: "0 0 50px rgba(245, 158, 11, 0.3)", maxWidth: "600px", margin: "0 auto", width: "100%" }}>
+            <div style={{ fontSize: "3.5rem", marginBottom: "0.3rem" }}>🏆</div>
+            <h2 style={{ fontSize: "1.75rem", fontWeight: "900", color: "#fff", marginBottom: "0.4rem" }}>
               ¡Batalla Multijugador Finalizada!
             </h2>
-            <p className="text-muted" style={{ fontSize: "1rem", marginBottom: "2rem" }}>
+            <p className="text-muted" style={{ fontSize: "0.9rem", marginBottom: "1.5rem" }}>
               Clasificación y puntajes de la sala {room.code}:
             </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
               {players.map((p, idx) => {
                 const isWinner = idx === 0;
                 const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "🎖️";
@@ -761,25 +934,25 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "1rem 1.25rem",
+                      padding: "0.85rem 1rem",
                       borderRadius: "14px",
                       background: isWinner ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.04)",
                       border: `1.5px solid ${isWinner ? "#F59E0B" : "rgba(255,255,255,0.08)"}`
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                      <span style={{ fontSize: "1.5rem" }}>{medal}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                      <span style={{ fontSize: "1.3rem" }}>{medal}</span>
                       <div style={{ textAlign: "left" }}>
-                        <div style={{ fontWeight: "900", fontSize: "1.05rem", color: "#fff" }}>
+                        <div style={{ fontWeight: "900", fontSize: "0.95rem", color: "#fff" }}>
                           #{idx + 1} {p.name} {p.userId === currentUserId ? "(Tú)" : ""}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: isWinner ? "#F59E0B" : "var(--color-text-muted)" }}>
+                        <div style={{ fontSize: "0.725rem", color: isWinner ? "#F59E0B" : "var(--color-text-muted)" }}>
                           +{p.score * 15 + (isWinner ? 30 : 10)} XP ganados
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ fontSize: "1.3rem", fontWeight: "900", color: "var(--color-primary)" }}>
+                    <div style={{ fontSize: "1.2rem", fontWeight: "900", color: "var(--color-primary)" }}>
                       {p.score} pts
                     </div>
                   </div>
@@ -787,24 +960,150 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               })}
             </div>
 
-            <button
-              onClick={() => router.push("/rooms")}
-              className="btn btn-primary"
-              style={{ width: "100%", padding: "1rem", fontSize: "1.1rem" }}
-            >
-              Volver al Hub de Salas
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <button
+                onClick={handleResetRoom}
+                disabled={resettingRoom}
+                className="btn btn-primary"
+                style={{ width: "100%", padding: "0.85rem", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+              >
+                <FaUndo /> <span>{resettingRoom ? "Reiniciando..." : "Volver a la Sala (Nueva Partida)"}</span>
+              </button>
+
+              <button
+                onClick={() => router.push("/rooms")}
+                className="btn btn-outline"
+                style={{ width: "100%", padding: "0.75rem", fontSize: "0.9rem" }}
+              >
+                🚪 Salir al Hub de Salas
+              </button>
+            </div>
           </div>
         )}
 
       </main>
 
+      {/* Host Edit Settings Modal */}
+      {showSettingsModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "1rem" }}>
+          <div className="animate-scale-up" style={{ background: "rgba(13, 20, 16, 0.98)", border: "1px solid rgba(245, 158, 11, 0.4)", borderRadius: "20px", padding: "1.5rem", maxWidth: "560px", width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: "900", color: "#fff", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span>⚙️ Ajustes de la Sala ({code})</span>
+              </h3>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                style={{ background: "none", border: "none", color: "var(--color-text-muted)", fontSize: "1.2rem", cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scope Selection */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--color-primary)", display: "block", marginBottom: "0.5rem" }}>
+                📍 Seleccionar Continentes / Bloques de Juego
+              </label>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+                {ROOM_TERRITORY_GROUPS.map((group) => (
+                  <div key={group.title} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", padding: "0.6rem 0.85rem", borderRadius: "12px" }}>
+                    <div style={{ fontSize: "0.8rem", fontWeight: "800", color: "#fff", marginBottom: "0.4rem" }}>
+                      {group.title}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.4rem" }}>
+                      {group.items.map((item) => {
+                        const isSelected = editScopes.includes(item.id);
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => toggleEditScope(item.id)}
+                            style={{
+                              textAlign: "left",
+                              padding: "0.4rem 0.6rem",
+                              borderRadius: "8px",
+                              fontSize: "0.785rem",
+                              fontWeight: "700",
+                              background: isSelected ? "rgba(16, 185, 129, 0.2)" : "rgba(255,255,255,0.04)",
+                              border: `1px solid ${isSelected ? "#10B981" : "rgba(255,255,255,0.08)"}`,
+                              color: isSelected ? "#10B981" : "#fff",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between"
+                            }}
+                          >
+                            <span>{item.label}</span>
+                            {isSelected && <FaCheck size={10} color="#10B981" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Total Questions Selection */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--color-primary)", display: "block", marginBottom: "0.5rem" }}>
+                🎯 Número de Preguntas por Ronda
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {[5, 10, 15, 20, 25, 30].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setEditQuestionCount(num)}
+                    style={{
+                      flex: 1,
+                      padding: "0.5rem",
+                      borderRadius: "10px",
+                      fontWeight: "800",
+                      fontSize: "0.85rem",
+                      background: editQuestionCount === num ? "var(--color-primary)" : "rgba(255,255,255,0.05)",
+                      color: editQuestionCount === num ? "#000" : "#fff",
+                      border: `1px solid ${editQuestionCount === num ? "var(--color-primary)" : "rgba(255,255,255,0.1)"}`,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.6rem" }}>
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="btn btn-outline"
+                style={{ flex: 1, padding: "0.65rem" }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                disabled={savingSettings}
+                className="btn btn-primary"
+                style={{ flex: 1, padding: "0.65rem" }}
+              >
+                {savingSettings ? "Guardando..." : "Guardar Ajustes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Invite Friends Modal */}
       {showInviteModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "1rem" }}>
-          <div className="animate-scale-up" style={{ background: "rgba(13, 20, 16, 0.98)", border: "1px solid rgba(59, 130, 246, 0.4)", borderRadius: "20px", padding: "1.75rem", maxWidth: "480px", width: "100%", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h3 style={{ fontSize: "1.25rem", fontWeight: "900", color: "#fff", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className="animate-scale-up" style={{ background: "rgba(13, 20, 16, 0.98)", border: "1px solid rgba(59, 130, 246, 0.4)", borderRadius: "20px", padding: "1.5rem", maxWidth: "460px", width: "100%", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+              <h3 style={{ fontSize: "1.15rem", fontWeight: "900", color: "#fff", display: "flex", alignItems: "center", gap: "0.4rem" }}>
                 <span>📩 Invitar Jugadores a la Sala</span>
               </h3>
               <button
@@ -815,21 +1114,21 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               </button>
             </div>
 
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1.25rem" }}>
+            <p style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
               Envía una notificación instantánea a otros jugadores para que accedan directamente con un solo clic.
             </p>
 
             {loadingOnline ? (
-              <div style={{ textAlign: "center", padding: "2rem", color: "var(--color-text-muted)" }}>
+              <div style={{ textAlign: "center", padding: "1.5rem", color: "var(--color-text-muted)" }}>
                 Cargando jugadores disponibles...
               </div>
             ) : onlinePlayers.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "2rem", color: "var(--color-text-muted)", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: "1px dashed rgba(255,255,255,0.1)" }}>
-                <p style={{ fontWeight: "700" }}>No hay otros jugadores en línea en este momento.</p>
-                <p style={{ fontSize: "0.8rem", marginTop: "0.3rem" }}>¡Puedes compartir el código de sala <strong style={{ color: "var(--color-primary)" }}>{code}</strong>!</p>
+              <div style={{ textAlign: "center", padding: "1.5rem", color: "var(--color-text-muted)", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: "1px dashed rgba(255,255,255,0.1)" }}>
+                <p style={{ fontWeight: "700", fontSize: "0.9rem" }}>No hay otros jugadores en línea en este momento.</p>
+                <p style={{ fontSize: "0.785rem", marginTop: "0.2rem" }}>¡Puedes compartir el código de sala <strong style={{ color: "var(--color-primary)" }}>{code}</strong>!</p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", maxHeight: "300px", overflowY: "auto" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxHeight: "280px", overflowY: "auto" }}>
                 {onlinePlayers.map((u) => {
                   const isInvited = invitedUserIds[u.id];
                   const isInRoom = players.some(p => p.userId === u.id);
@@ -837,26 +1136,26 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                   return (
                     <div
                       key={u.id}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "0.75rem 1rem", borderRadius: "12px" }}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "0.6rem 0.85rem", borderRadius: "12px" }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#3B82F6", color: "#fff", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#3B82F6", color: "#fff", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem" }}>
                           {u.name ? u.name.charAt(0).toUpperCase() : "U"}
                         </div>
                         <div>
-                          <div style={{ fontWeight: "800", fontSize: "0.9rem", color: "#fff" }}>{u.name}</div>
-                          <div style={{ fontSize: "0.75rem", color: "#10B981" }}>🟢 En línea</div>
+                          <div style={{ fontWeight: "800", fontSize: "0.85rem", color: "#fff" }}>{u.name}</div>
+                          <div style={{ fontSize: "0.7rem", color: "#10B981" }}>🟢 En línea</div>
                         </div>
                       </div>
 
                       {isInRoom ? (
-                        <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#10B981" }}>En la sala</span>
+                        <span style={{ fontSize: "0.725rem", fontWeight: "800", color: "#10B981" }}>En la sala</span>
                       ) : isInvited ? (
-                        <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#F59E0B" }}>¡Invitación enviada! ✉️</span>
+                        <span style={{ fontSize: "0.725rem", fontWeight: "800", color: "#F59E0B" }}>Enviada ✉️</span>
                       ) : (
                         <button
                           onClick={() => handleSendInvite(u.id)}
-                          style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "0.4rem 0.85rem", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "800", cursor: "pointer" }}
+                          style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "0.35rem 0.75rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: "800", cursor: "pointer" }}
                         >
                           Invitar
                         </button>
@@ -870,13 +1169,28 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             <button
               onClick={() => setShowInviteModal(false)}
               className="btn btn-outline"
-              style={{ width: "100%", marginTop: "1.25rem", padding: "0.75rem" }}
+              style={{ width: "100%", marginTop: "1rem", padding: "0.65rem" }}
             >
               Cerrar
             </button>
           </div>
         </div>
       )}
+
+      {/* Global CSS for Mobile Responsiveness */}
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .lobby-container {
+            grid-template-columns: 1fr !important;
+          }
+          .chat-container {
+            height: 340px !important;
+          }
+          .options-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
