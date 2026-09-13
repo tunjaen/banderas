@@ -467,42 +467,42 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
         </div>
       </main>
 
-      {/* Feedback Footer Modal (with Fix for Spatial Mode Text Overlay) */}
+      {/* Feedback Footer Modal (with Flag Image Preview & Responsive Mobile Fix) */}
       {feedback && (
         <div className="animate-fade-in" style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
-          padding: "1.75rem",
+          padding: "1.25rem 1rem",
           background: "#0d1117",
           borderTop: `4px solid ${feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)"}`,
-          boxShadow: "0 -10px 40px rgba(0,0,0,0.8)",
+          boxShadow: "0 -10px 40px rgba(0,0,0,0.95)",
           zIndex: 100,
-          maxHeight: "100vh",
+          maxHeight: "85vh",
           overflowY: "auto"
         }}>
-          <div className="container flex md-flex-col md-items-center md-text-center justify-between items-start gap-6" style={{ maxWidth: "1000px" }}>
+          <div className="container flex md-flex-col md-items-center md-text-center justify-between items-center gap-4" style={{ maxWidth: "1000px" }}>
             <div className="flex md-flex-col md-items-center gap-4" style={{ flex: 1 }}>
               <div style={{ color: feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)", fontSize: "2.5rem", flexShrink: 0 }}>
                 {feedback.isCorrect ? <FaCheckCircle /> : <FaTimesCircle />}
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: "1.75rem", fontWeight: "800", color: feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)" }}>
+                <h3 style={{ fontSize: "1.5rem", fontWeight: "800", color: feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)" }}>
                   {feedback.isTimeout ? "¡Tiempo agotado!" : feedback.isCorrect ? t.quiz.correct : t.quiz.incorrect}
                 </h3>
-                <p style={{ fontSize: "1.25rem", color: "var(--color-text)", margin: "0.5rem 0" }}>
+                <p style={{ fontSize: "1.2rem", color: "var(--color-text)", margin: "0.3rem 0" }}>
                   <strong>{lang === 'en' ? (feedback.country?.nameEn || question.countryNameEn) : (feedback.country?.name || question.countryName)}</strong>
                 </p>
-                <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.capital} {lang === 'en' ? (feedback.country?.capitalEn || "") : (feedback.country?.capital || "")}</p>
-                <p className="text-muted" style={{ margin: "0.2rem 0" }}>{t.quiz.continent} {lang === 'en' ? (feedback.country?.continentEn || "") : (feedback.country?.continent || "")}</p>
+                <p className="text-muted" style={{ margin: "0.15rem 0", fontSize: "0.9rem" }}>{t.quiz.capital} {lang === 'en' ? (feedback.country?.capitalEn || "") : (feedback.country?.capital || "")}</p>
+                <p className="text-muted" style={{ margin: "0.15rem 0", fontSize: "0.9rem" }}>{t.quiz.continent} {lang === 'en' ? (feedback.country?.continentEn || "") : (feedback.country?.continent || "")}</p>
 
                 {feedback.xpGained > 0 ? (
-                  <p className="text-muted font-bold mt-2" style={{ color: "var(--color-warning)", margin: "0.4rem 0 0" }}>+{feedback.xpGained} XP</p>
+                  <p className="text-muted font-bold mt-1" style={{ color: "var(--color-warning)", margin: "0.3rem 0 0", fontSize: "0.9rem" }}>+{feedback.xpGained} XP</p>
                 ) : (
-                  <p className="text-muted font-bold mt-2" style={{ color: "var(--color-text-muted)", margin: "0.4rem 0 0" }}>0 XP (Bandera Dominada)</p>
+                  <p className="text-muted font-bold mt-1" style={{ color: "var(--color-text-muted)", margin: "0.3rem 0 0", fontSize: "0.9rem" }}>0 XP (Bandera Dominada)</p>
                 )}
 
                 {feedback.country?.id && ["SJM", "PRI", "GRL", "MAC", "PYF", "NCL", "GUF", "HKG", "BMU", "CYM"].includes(feedback.country.id) && (
-                  <div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "rgba(245, 158, 11, 0.1)", borderLeft: "3px solid var(--color-warning)", borderRadius: "0 var(--radius-sm) var(--radius-sm) 0" }}>
-                    <p style={{ color: "var(--color-warning)", fontSize: "0.875rem", margin: 0, fontWeight: "600" }}>
+                  <div style={{ marginTop: "0.5rem", padding: "0.4rem 0.6rem", background: "rgba(245, 158, 11, 0.1)", borderLeft: "3px solid var(--color-warning)", borderRadius: "0 var(--radius-sm) var(--radius-sm) 0" }}>
+                    <p style={{ color: "var(--color-warning)", fontSize: "0.8rem", margin: 0, fontWeight: "600" }}>
                       {lang === 'en'
                         ? "Extra Challenge: This is an overseas territory or autonomous dependency."
                         : "Reto Extra: Este es un territorio de ultramar o dependencia autónoma."}
@@ -511,11 +511,11 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
                 )}
 
                 {funFact && (
-                  <div className="animate-fade-in" style={{ marginTop: "0.75rem", padding: "0.75rem", background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <p style={{ fontSize: "0.75rem", fontWeight: "bold", color: "var(--color-primary)", marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <div className="animate-fade-in" style={{ marginTop: "0.5rem", padding: "0.6rem 0.75rem", background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <p style={{ fontSize: "0.75rem", fontWeight: "bold", color: "var(--color-primary)", marginBottom: "0.2rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       {lang === 'en' ? "💡 Did you know?" : "💡 ¿Sabías que...?"}
                     </p>
-                    <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", lineHeight: "1.4", margin: 0 }}>
+                    <p style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", lineHeight: "1.35", margin: 0 }}>
                       {funFact}
                     </p>
                   </div>
@@ -523,22 +523,41 @@ export default function LearnPage({ params }: { params: Promise<{ mode: string }
               </div>
             </div>
 
-            {mode === "spatial" ? (
-              <div style={{ width: "200px", height: "140px", borderRadius: "var(--radius-md)", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            {/* Visual media preview: Flag image + Map preview */}
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
+              {/* Flag Image Card (Guarantees the flag is ALWAYS visible inside feedback on mobile) */}
+              <div style={{
+                height: "115px",
+                minWidth: "140px",
+                maxWidth: "180px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.04)",
+                padding: "0.4rem",
+                borderRadius: "var(--radius-md)",
+                border: "1.5px solid rgba(255,255,255,0.15)",
+                boxShadow: "0 6px 18px rgba(0,0,0,0.5)"
+              }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`https://flagcdn.com/w320/${(feedback.country?.isoCode || question.flagCode).toLowerCase()}.png`} alt="Flag" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-md)" }} />
+                <img
+                  src={`https://flagcdn.com/w320/${(feedback.country?.isoCode || question.flagCode).toLowerCase()}.png`}
+                  alt="Bandera"
+                  style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "4px" }}
+                />
               </div>
-            ) : (
-              <div style={{ width: "280px", height: "140px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "2px solid rgba(255,255,255,0.1)" }}>
+
+              {/* Map preview */}
+              <div style={{ width: "180px", height: "115px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1.5px solid rgba(255,255,255,0.15)", boxShadow: "0 6px 18px rgba(0,0,0,0.5)" }}>
                 <Map lat={feedback.country?.lat || question.lat} lng={feedback.country?.lng || question.lng} name={lang === 'en' ? (feedback.country?.nameEn || question.countryNameEn) : (feedback.country?.name || question.countryName)} />
               </div>
-            )}
+            </div>
 
-            <div className="md-w-full md-h-auto" style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "140px" }}>
+            <div className="md-w-full md-h-auto" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <button onClick={fetchQuestion} className="btn md-w-full" style={{
                 background: feedback.isCorrect ? "var(--color-success)" : "var(--color-danger)",
-                color: "white", fontSize: "1.25rem", padding: "1rem 2.5rem", borderRadius: "var(--radius-full)",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.25)"
+                color: "white", fontSize: "1.15rem", fontWeight: "800", padding: "0.85rem 2rem", borderRadius: "var(--radius-full)",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.3)", cursor: "pointer"
               }}>
                 {t.quiz.continueBtn}
               </button>

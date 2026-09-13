@@ -35,6 +35,17 @@ function GlobalMapContent() {
   const [targetUserName, setTargetUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [userList, setUserList] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/leaderboard")
+      .then(res => res.json())
+      .then(data => {
+        if (data.users) setUserList(data.users);
+      })
+      .catch(e => console.error("Error fetching leaderboard users for map dropdown:", e));
+  }, []);
+
   useEffect(() => {
     const loadMapData = async () => {
       try {
@@ -88,6 +99,8 @@ function GlobalMapContent() {
           setProgress(pMap);
           if (progData.userName && userId) {
             setTargetUserName(progData.userName);
+          } else {
+            setTargetUserName(null);
           }
         }
       } catch (e) {
@@ -188,10 +201,42 @@ function GlobalMapContent() {
           gap: "0.75rem"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
           <h1 style={{ fontSize: "1.25rem", fontWeight: "800", margin: 0, color: "#fff" }}>
             {targetUserName ? `Mapa de ${targetUserName.split(" ")[0]}` : t.map.title}
           </h1>
+
+          {/* User Selector Dropdown */}
+          <select
+            value={userId || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val) {
+                router.push(`/map?userId=${val}`);
+              } else {
+                router.push("/map");
+              }
+            }}
+            style={{
+              padding: "0.4rem 0.75rem",
+              borderRadius: "10px",
+              background: "#1E293B",
+              color: "#60A5FA",
+              border: "1px solid rgba(59, 130, 246, 0.4)",
+              fontWeight: "700",
+              fontSize: "0.85rem",
+              cursor: "pointer",
+              outline: "none"
+            }}
+          >
+            <option value="">👤 {lang === 'en' ? "My Global Map" : "Mi Mapa Global"}</option>
+            {userList.map(u => (
+              <option key={u.id} value={u.id}>
+                🌍 {u.name} (Niv. {u.level})
+              </option>
+            ))}
+          </select>
+
           {isIslandExpert && (
             <button
               onClick={() => setShowIslandModal(true)}

@@ -159,31 +159,92 @@ export default function Navbar({ user }: NavbarProps) {
             </div>
           </Link>
 
+          {/* Desktop Primary Navigation Links */}
+          <div className="desktop-controls" style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "1rem" }}>
+            <Link
+              href="/dashboard?tab=progress"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.35rem",
+                color: "#fff",
+                fontWeight: "700",
+                fontSize: "0.85rem",
+                textDecoration: "none",
+                padding: "0.35rem 0.65rem",
+                borderRadius: "8px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                transition: "all 0.2s"
+              }}
+            >
+              <span>📊</span>
+              <span>Mi Progreso</span>
+            </Link>
+
+            <Link
+              href="/dashboard?tab=duels"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.35rem",
+                color: "#fff",
+                fontWeight: "700",
+                fontSize: "0.85rem",
+                textDecoration: "none",
+                padding: "0.35rem 0.65rem",
+                borderRadius: "8px",
+                background: pendingChallengesCount > 0 ? "rgba(239, 68, 68, 0.15)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${pendingChallengesCount > 0 ? "rgba(239, 68, 68, 0.4)" : "rgba(255,255,255,0.08)"}`,
+                transition: "all 0.2s"
+              }}
+            >
+              <span>⚔️</span>
+              <span>Duelos</span>
+              {pendingChallengesCount > 0 && (
+                <span
+                  style={{
+                    background: "#EF4444",
+                    color: "#fff",
+                    fontSize: "0.7rem",
+                    fontWeight: "900",
+                    borderRadius: "20px",
+                    padding: "0.1rem 0.45rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 0 8px rgba(239, 68, 68, 0.75)"
+                  }}
+                >
+                  {pendingChallengesCount}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/dashboard?tab=ranking"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.35rem",
+                color: "#fff",
+                fontWeight: "700",
+                fontSize: "0.85rem",
+                textDecoration: "none",
+                padding: "0.35rem 0.65rem",
+                borderRadius: "8px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                transition: "all 0.2s"
+              }}
+            >
+              <span>🥇</span>
+              <span>Ranking Global</span>
+            </Link>
+          </div>
+
           {/* Right Controls: Timer, Streak, Lang, Logout & Mobile Toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            {/* Pending Challenges Badge */}
-            {pendingChallengesCount > 0 && (
-              <Link
-                href="/dashboard"
-                title="Retos pendientes por responder"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.3rem",
-                  background: "rgba(239, 68, 68, 0.15)",
-                  color: "#EF4444",
-                  border: "1px solid rgba(239, 68, 68, 0.4)",
-                  padding: "0.35rem 0.65rem",
-                  borderRadius: "var(--radius-full)",
-                  fontSize: "0.825rem",
-                  fontWeight: "800",
-                  textDecoration: "none"
-                }}
-              >
-                <span>⚔️ ({pendingChallengesCount})</span>
-              </Link>
-            )}
-
             {/* Online Indicator Badge */}
             <button
               onClick={() => setShowOnlineModal(true)}
@@ -375,10 +436,12 @@ export default function Navbar({ user }: NavbarProps) {
             </button>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links (Primary 3 Items at Top of Mobile Drawer) */}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            
+            {/* 1. Mi Progreso */}
             <Link
-              href="/dashboard"
+              href="/dashboard?tab=progress"
               onClick={() => setIsMobileMenuOpen(false)}
               style={{
                 display: "flex",
@@ -386,17 +449,83 @@ export default function Navbar({ user }: NavbarProps) {
                 gap: "0.75rem",
                 padding: "0.85rem 1rem",
                 borderRadius: "10px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                color: "#fff",
-                fontWeight: "700",
+                background: "rgba(167, 244, 50, 0.12)",
+                border: "1px solid rgba(167, 244, 50, 0.3)",
+                color: "var(--color-primary)",
+                fontWeight: "800",
                 fontSize: "0.95rem",
                 textDecoration: "none"
               }}
             >
-              <span style={{ fontSize: "1.2rem" }}>🏠</span>
-              <span>Dashboard</span>
+              <span style={{ fontSize: "1.2rem" }}>📊</span>
+              <span>Mi Progreso</span>
             </Link>
+
+            {/* 2. Duelos (con Notificación Alerta Roja) */}
+            <Link
+              href="/dashboard?tab=duels"
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0.85rem 1rem",
+                borderRadius: "10px",
+                background: "rgba(168, 85, 247, 0.15)",
+                border: "1px solid rgba(168, 85, 247, 0.35)",
+                color: "#C084FC",
+                fontWeight: "800",
+                fontSize: "0.95rem",
+                textDecoration: "none"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <span style={{ fontSize: "1.2rem" }}>⚔️</span>
+                <span>Duelos 1v1</span>
+              </div>
+              {pendingChallengesCount > 0 && (
+                <span
+                  style={{
+                    background: "#EF4444",
+                    color: "#fff",
+                    fontSize: "0.75rem",
+                    fontWeight: "900",
+                    borderRadius: "20px",
+                    padding: "0.15rem 0.6rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 0 10px rgba(239, 68, 68, 0.75)"
+                  }}
+                >
+                  {pendingChallengesCount} pendiente{pendingChallengesCount > 1 ? "s" : ""}
+                </span>
+              )}
+            </Link>
+
+            {/* 3. Ranking Global */}
+            <Link
+              href="/dashboard?tab=ranking"
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                padding: "0.85rem 1rem",
+                borderRadius: "10px",
+                background: "rgba(245, 158, 11, 0.12)",
+                border: "1px solid rgba(245, 158, 11, 0.3)",
+                color: "#F59E0B",
+                fontWeight: "800",
+                fontSize: "0.95rem",
+                textDecoration: "none"
+              }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>🥇</span>
+              <span>Ranking Global</span>
+            </Link>
+
+            <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "0.25rem 0" }} />
 
             <Link
               href="/rooms"

@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
 import { useRouter } from "next/navigation";
-import { FaMedal, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaMedal, FaChevronDown, FaChevronUp, FaGlobe } from "react-icons/fa";
 
 export default function LeaderboardTab({ currentUserId }: { currentUserId: string }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +113,41 @@ export default function LeaderboardTab({ currentUserId }: { currentUserId: strin
               <div style={{ fontWeight: "800", color: "var(--color-primary)", fontSize: "1rem", marginLeft: "0.5rem" }}>
                 {u.xp} XP
               </div>
+
+              {/* Direct Global Map Button Shortcut */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/map?userId=${u.id}`);
+                }}
+                title={lang === 'en' ? `View ${u.name}'s Global Map` : `Ver Mapa Global de ${u.name}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  background: "rgba(59, 130, 246, 0.12)",
+                  color: "#60A5FA",
+                  border: "1px solid rgba(59, 130, 246, 0.3)",
+                  padding: "0.35rem 0.65rem",
+                  borderRadius: "8px",
+                  fontSize: "0.78rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  marginLeft: "0.75rem",
+                  transition: "all 0.2s ease"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = "rgba(59, 130, 246, 0.25)";
+                  e.currentTarget.style.borderColor = "#60A5FA";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = "rgba(59, 130, 246, 0.12)";
+                  e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.3)";
+                }}
+              >
+                <FaGlobe size={13} />
+                <span>Mapa</span>
+              </button>
             </div>
           );
         })}

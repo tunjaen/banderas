@@ -170,10 +170,10 @@ export default function SubRegionSelector() {
         <h1 style={{ fontSize: "1.85rem", fontWeight: "900", margin: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
           <span>⚔️</span> {lang === 'en' ? "Conquest Mode" : "Modo Conquista"}
         </h1>
-        <p className="text-muted" style={{ fontSize: "0.95rem", marginTop: "0.4rem" }}>
+        <p className="text-muted" style={{ fontSize: "0.95rem", marginTop: "0.4rem", lineHeight: "1.4" }}>
           {lang === 'en' 
-            ? "Choose a continent or sub-region block to conquer flags step by step" 
-            : "Elige un continente o bloque territorial para conquistar sus banderas paso a paso"}
+            ? "Conquer the world map step by step: as you advance, your progress will be displayed on the global map and other players will be able to see your achievements in real-time." 
+            : "Conquista el mapa del mundo paso a paso: según vayas avanzando, tu progreso se reflejará en el mapa global y los demás jugadores podrán ver tus conquistas en tiempo real."}
         </p>
       </div>
 

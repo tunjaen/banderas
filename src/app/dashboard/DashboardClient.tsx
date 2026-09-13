@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   FaFire, 
@@ -83,7 +84,15 @@ export default function DashboardClient({
   isIslandExpert?: boolean;
 }) {
   const { t, lang } = useLanguage();
-  const [activeTab, setActiveTab] = useState("progress");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams ? searchParams.get("tab") : null;
+  const [activeTab, setActiveTab] = useState(tabParam || "progress");
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(false);
   const [showIslandModal, setShowIslandModal] = useState(false);
   const [showCreateChallenge, setShowCreateChallenge] = useState(false);
@@ -199,74 +208,6 @@ export default function DashboardClient({
               <span>Experto en Islas</span>
             </button>
           )}
-        </div>
-
-        {/* Navigation Tabs (Mi Progreso | Duelos | Ranking Global) */}
-        <div style={{ display: "flex", gap: "1.25rem", marginBottom: "1.5rem", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "0.25rem", flexWrap: "wrap" }}>
-          
-          {/* Tab 1: Mi Progreso */}
-          <button 
-            onClick={() => setActiveTab("progress")}
-            style={{ 
-              fontSize: "1.05rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem",
-              color: activeTab === "progress" ? "var(--color-primary)" : "var(--color-text-muted)",
-              borderBottom: activeTab === "progress" ? "3px solid var(--color-primary)" : "3px solid transparent",
-              paddingBottom: "0.4rem",
-              marginBottom: "-0.4rem",
-              background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", cursor: "pointer"
-            }}
-          >
-            <FaChartBar /> {t.dashboard.tabs?.progress || "Mi Progreso"}
-          </button>
-
-          {/* Tab 2: Duelos (con Notificación Badge) */}
-          <button 
-            onClick={() => setActiveTab("duels")}
-            style={{ 
-              fontSize: "1.05rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem",
-              color: activeTab === "duels" ? "var(--color-primary)" : "var(--color-text-muted)",
-              borderBottom: activeTab === "duels" ? "3px solid var(--color-primary)" : "3px solid transparent",
-              paddingBottom: "0.4rem",
-              marginBottom: "-0.4rem",
-              background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", cursor: "pointer",
-              position: "relative"
-            }}
-          >
-            <SwordsIcon size={16} /> Duelos
-            {totalDuelAlerts > 0 && (
-              <span
-                style={{
-                  background: "#EF4444",
-                  color: "#fff",
-                  fontSize: "0.75rem",
-                  fontWeight: "900",
-                  borderRadius: "20px",
-                  padding: "0.15rem 0.5rem",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 0 10px rgba(239, 68, 68, 0.65)"
-                }}
-              >
-                {totalDuelAlerts}
-              </span>
-            )}
-          </button>
-
-          {/* Tab 3: Ranking Global */}
-          <button 
-            onClick={() => setActiveTab("ranking")}
-            style={{ 
-              fontSize: "1.05rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem",
-              color: activeTab === "ranking" ? "var(--color-primary)" : "var(--color-text-muted)",
-              borderBottom: activeTab === "ranking" ? "3px solid var(--color-primary)" : "3px solid transparent",
-              paddingBottom: "0.4rem",
-              marginBottom: "-0.4rem",
-              background: "none", borderLeft: "none", borderRight: "none", borderTop: "none", cursor: "pointer"
-            }}
-          >
-            <FaMedal /> {t.dashboard.tabs?.ranking || "Ranking Global"}
-          </button>
         </div>
 
         {activeTab === "progress" && (
@@ -450,8 +391,8 @@ export default function DashboardClient({
                     </h3>
                     <p style={{ fontSize: "0.95rem", color: "var(--color-text-muted)", marginTop: "0.5rem", lineHeight: "1.5" }}>
                       {lang === 'en' 
-                        ? "Select specific continents or smaller sub-region blocks with difficulty ratings (Easy, Medium, Hard) to master flags step by step." 
-                        : "Elige continentes o bloques territoriales más pequeños clasificados por dificultad (Fácil, Medio, Difícil) para dominar banderas paso a paso."}
+                        ? "Conquer the world map step by step: as you advance, your progress will be displayed on the global map and other players will be able to see your achievements in real-time." 
+                        : "Conquista el mapa del mundo paso a paso: según vayas avanzando, tu progreso se reflejará en el mapa global y los demás jugadores podrán ver tus conquistas en tiempo real."}
                     </p>
                   </div>
 

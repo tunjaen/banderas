@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -44,14 +45,16 @@ export default async function DashboardPage() {
   });
 
   return (
-    <DashboardClient 
-      user={user} 
-      totalCountries={totalCountries}
-      masteredCount={masteredCount} 
-      familiarCount={familiarCount}
-      learningCount={learningCount} 
-      unseenCount={unseenCount}
-      isIslandExpert={isIslandExpert}
-    />
+    <Suspense fallback={<div className="container flex justify-center items-center" style={{ minHeight: "100vh" }}>Cargando dashboard...</div>}>
+      <DashboardClient 
+        user={user} 
+        totalCountries={totalCountries}
+        masteredCount={masteredCount} 
+        familiarCount={familiarCount}
+        learningCount={learningCount} 
+        unseenCount={unseenCount}
+        isIslandExpert={isIslandExpert}
+      />
+    </Suspense>
   );
 }
