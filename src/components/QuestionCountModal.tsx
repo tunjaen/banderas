@@ -31,18 +31,18 @@ export default function QuestionCountModal({
       hoverBorder: "#10B981"
     },
     {
-      limit: 25,
+      limit: 15,
       icon: <FaFire style={{ color: "#F59E0B" }} size={24} />,
-      label: "25",
+      label: "15",
       bg: "rgba(245, 158, 11, 0.12)",
       color: "#F59E0B",
       borderColor: "rgba(245, 158, 11, 0.3)",
       hoverBorder: "#F59E0B"
     },
     {
-      limit: 50,
+      limit: 20,
       icon: <FaCrown style={{ color: "#60A5FA" }} size={24} />,
-      label: "50",
+      label: "20",
       bg: "rgba(59, 130, 246, 0.12)",
       color: "#60A5FA",
       borderColor: "rgba(59, 130, 246, 0.3)",
